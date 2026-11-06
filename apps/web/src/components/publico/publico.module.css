@@ -517,7 +517,7 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .links a:not(.botao):not(.entrar) {
+  .links a:not(.botao):not(.entrar):not(.sempre) {
     display: none;
   }
 
@@ -558,9 +558,9 @@
     padding: 8px 14px;
   }
 
-  .navegacao :global(.marca) {
-    font-size: 1rem;
-    white-space: nowrap;
+  /* No celular, só o símbolo da marca: sobra espaço para Funcionalidades, Entrar e Criar conta. */
+  .navegacao :global(.marca) span {
+    display: none;
   }
 
   .grande {
@@ -573,4 +573,180 @@
   .links a.botao {
     transition: none;
   }
+}
+
+/* Página de funcionalidades */
+
+.topoPagina {
+  padding-top: 64px;
+  padding-bottom: 32px;
+}
+
+.topoPagina h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin: 0 0 16px;
+}
+
+.sumario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sumario a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-tinta);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.sumario a:hover {
+  border-color: var(--cor-primaria);
+  color: var(--cor-primaria);
+}
+
+.bloco {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 40px;
+  padding: 48px 0;
+  border-top: 1px solid var(--cor-borda);
+  scroll-margin-top: 80px;
+}
+
+.bloco:not(:has(aside)) {
+  grid-template-columns: 1fr;
+}
+
+.bloco h2 {
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.bloco .lide {
+  margin-bottom: 20px;
+}
+
+.textoBloco {
+  max-width: 760px;
+  line-height: 1.65;
+}
+
+.textoBloco h3 {
+  font-size: 1rem;
+  margin: 20px 0 8px;
+}
+
+.textoBloco p {
+  margin: 12px 0;
+}
+
+.passos,
+.marcadores {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.marcadores code {
+  font-size: 0.8125rem;
+  color: var(--cor-suave);
+}
+
+.naTela {
+  align-self: start;
+  position: sticky;
+  top: 88px;
+  padding: 20px;
+  border-radius: 14px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  box-shadow: var(--sombra);
+}
+
+.naTela .rotulo {
+  color: var(--cor-acento);
+  margin: 0 0 10px;
+}
+
+.listaTela,
+.listaSelos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 0.9375rem;
+}
+
+.listaTela li {
+  padding-left: 18px;
+  position: relative;
+}
+
+.listaTela li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--cor-primaria);
+}
+
+.listaSelos li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.duasColunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.duasColunas h3::first-letter {
+  text-transform: uppercase;
+}
+
+.nota {
+  font-size: 0.875rem;
+  color: var(--cor-suave);
+}
+
+@media (max-width: 900px) {
+  .bloco,
+  .duasColunas {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .naTela {
+    position: static;
+  }
+}
+
+.linksRodape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.875rem;
+}
+
+.linksRodape a {
+  color: var(--cor-suave);
+  text-decoration: none;
+}
+
+.linksRodape a:hover {
+  color: var(--cor-primaria);
 }
