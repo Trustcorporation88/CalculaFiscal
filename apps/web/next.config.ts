@@ -12,8 +12,6 @@ const csp = [
 ].join('; ');
 
 const config: NextConfig = {
-  // Standalone usa symlinks, que o Windows bloqueia sem modo de desenvolvedor. Railway e CI rodam em Linux.
-  ...(process.platform === 'win32' ? {} : { output: 'standalone' as const }),
   poweredByHeader: false,
   transpilePackages: ['@calculafiscal/motor-fiscal'],
   async headers() {
