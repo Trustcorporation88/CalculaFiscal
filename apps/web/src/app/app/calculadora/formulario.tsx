@@ -1,85 +1,26 @@
 'use client';
 
-import { startTransition, useActionState, useState, type FormEvent, type ReactNode } from 'react';
-import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
-import type { Regime } from '@calculafiscal/motor-fiscal';
+import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
+import { AVISO_REDUCOES } from '@/lib/calculadora/avisos';
+import { abasDoResultado } from '@/lib/calculadora/planilha';
+import { CampoCenario, CampoNumero, CamposVenda } from '@/components/calculadora/campos';
+import { CenariosLadoALado } from '@/components/calculadora/cenarios';
 import { Comparador } from '@/components/calculadora/comparador';
+import { BotoesExportar } from '@/components/calculadora/exportar';
 import { Fontes } from '@/components/calculadora/fontes';
 import { reaisMilesimos } from '@/components/calculadora/formato';
 import { LinhaDoTempo } from '@/components/calculadora/linha-do-tempo';
 import { MemoriaCalculo } from '@/components/calculadora/memoria-calculo';
+import { PrecoPsicologico } from '@/components/calculadora/psicologico';
+import { ResumoEntrada } from '@/components/calculadora/resumo-entrada';
 import { calcular, type EstadoCalculadora } from './actions';
 
 const INICIAL: EstadoCalculadora = { situacao: 'vazio' };
 
-const ROTULO_REGIME: Readonly<Record<Regime, string>> = {
-  SIMPLES_DAS: 'Simples Nacional, CBS e IBS dentro do DAS',
-  SIMPLES_REGULAR: 'Simples Nacional, CBS e IBS no regime regular',
-  PRESUMIDO: 'Lucro Presumido',
-  REAL: 'Lucro Real',
-};
-
-type CampoProps = {
-  nome: string;
-  rotulo: string;
-  ajuda?: ReactNode;
-  sufixo?: '%' | 'R$';
-  obrigatorio?: boolean;
-  iniciais: ValoresFormulario;
-  erros: Readonly<Record<string, string>>;
-};
-
-/** Campo numérico em formato brasileiro (vírgula), com erro e ajuda ligados por aria. */
-function CampoNumero({
-  nome,
-  rotulo,
-  ajuda,
-  sufixo,
-  obrigatorio = true,
-  iniciais,
-  erros,
-}: CampoProps) {
-  const erro = erros[nome];
-  const descricao = [ajuda ? `${nome}-ajuda` : null, erro ? `${nome}-erro` : null]
-    .filter(Boolean)
-    .join(' ');
-  return (
-    <div className="campo">
-      <label htmlFor={nome}>
-        {rotulo}
-        {sufixo && <span className="ajuda"> ({sufixo})</span>}
-        {!obrigatorio && <span className="ajuda"> opcional</span>}
-      </label>
-      <input
-        id={nome}
-        name={nome}
-        inputMode="decimal"
-        autoComplete="off"
-        defaultValue={iniciais[nome] ?? ''}
-        required={obrigatorio}
-        aria-invalid={erro ? true : undefined}
-        aria-describedby={descricao || undefined}
-      />
-      {ajuda && (
-        <p id={`${nome}-ajuda`} className="ajuda">
-          {ajuda}
-        </p>
-      )}
-      {erro && (
-        <p id={`${nome}-erro`} className="erro-campo">
-          {erro}
-        </p>
-      )}
-    </div>
-  );
-}
-
 export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulario }) {
   const [estado, acao, pendente] = useActionState(calcular, INICIAL);
-  const [regime, setRegime] = useState<Regime>((iniciais['regime'] as Regime) ?? 'SIMPLES_DAS');
   const [temSt, setTemSt] = useState(iniciais['temSt'] === 'on');
-  const simples = regime === 'SIMPLES_DAS' || regime === 'SIMPLES_REGULAR';
   const erros = estado.situacao === 'erro' ? estado.campos : {};
   const p = { iniciais, erros };
 
@@ -92,7 +33,7 @@ export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulari
 
   return (
     <>
-      <form onSubmit={enviar} className="calculadora" noValidate>
+      <form onSubmit={enviar} className="calculadora nao-imprimir" noValidate>
         <fieldset>
           <legend>Produto e cenário</legend>
           <div className="campo">
@@ -125,16 +66,7 @@ export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulari
               </p>
             )}
           </div>
-          <div className="campo">
-            <label htmlFor="cenario">Cenário</label>
-            <select id="cenario" name="cenario" defaultValue={iniciais['cenario'] ?? 'base'}>
-              {CENARIOS.map((c) => (
-                <option key={c} value={c}>
-                  {DESCRICAO_CENARIOS[c]}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CampoCenario iniciais={iniciais} />
         </fieldset>
 
         <fieldset>
@@ -187,82 +119,7 @@ export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulari
 
         <fieldset>
           <legend>Venda: como a sua empresa vende</legend>
-          <div className="campo">
-            <label htmlFor="regime">Regime</label>
-            <select
-              id="regime"
-              name="regime"
-              value={regime}
-              onChange={(e) => setRegime(e.target.value as Regime)}
-            >
-              {(Object.keys(ROTULO_REGIME) as Regime[]).map((r) => (
-                <option key={r} value={r}>
-                  {ROTULO_REGIME[r]}
-                </option>
-              ))}
-            </select>
-          </div>
-          {simples ? (
-            <>
-              <CampoNumero nome="aliquotaDas" rotulo="Alíquota efetiva do DAS" sufixo="%" {...p} />
-              <CampoNumero
-                nome="parcelaCbsIbsNoDas"
-                rotulo="Parte do DAS que é CBS e IBS"
-                sufixo="%"
-                obrigatorio={false}
-                ajuda="Ainda não definida pelo CGSN. Em branco, o crédito ao cliente aparece como pendente e o Simples no regime regular não é calculado."
-                {...p}
-              />
-            </>
-          ) : (
-            <>
-              <CampoNumero
-                nome="aliquotaIcmsSaida"
-                rotulo="ICMS na venda"
-                sufixo="%"
-                ajuda="Zero quando a ST já encerrou a tributação."
-                {...p}
-              />
-              <div className="campo campo-caixa">
-                <input
-                  id="creditaIcmsEntrada"
-                  name="creditaIcmsEntrada"
-                  type="checkbox"
-                  defaultChecked={iniciais['creditaIcmsEntrada'] === 'on'}
-                />
-                <label htmlFor="creditaIcmsEntrada">Aproveito o crédito do ICMS da compra</label>
-              </div>
-              <CampoNumero
-                nome="aliquotaPisCofinsSaida"
-                rotulo="PIS e Cofins na venda"
-                sufixo="%"
-                ajuda="Zero no monofásico."
-                {...p}
-              />
-              <CampoNumero
-                nome="creditoPisCofinsEntrada"
-                rotulo="Crédito de PIS e Cofins sobre a compra"
-                sufixo="%"
-                ajuda="Zero quando não há crédito (Presumido ou monofásico)."
-                {...p}
-              />
-            </>
-          )}
-          <CampoNumero nome="despesasVariaveis" rotulo="Despesas variáveis" sufixo="%" {...p} />
-          <CampoNumero nome="margem" rotulo="Margem desejada" sufixo="%" {...p} />
-          <div className="campo">
-            <label htmlFor="baseMargem">Base da margem</label>
-            <select
-              id="baseMargem"
-              name="baseMargem"
-              defaultValue={iniciais['baseMargem'] ?? 'PRECO_COM_TRIBUTO'}
-            >
-              <option value="PRECO_COM_TRIBUTO">
-                Sobre o preço com tributo (o que o cliente paga)
-              </option>
-              <option value="RECEITA_LIQUIDA">Sobre a receita líquida</option>
-            </select>
-          </div>
+          <CamposVenda {...p} />
           <CampoNumero
             nome="impostoSimplificado"
             rotulo="Imposto do cálculo simplificado, para comparar"
@@ -289,11 +146,20 @@ export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulari
 
 function Resultado({ estado }: { estado: Extract<EstadoCalculadora, { situacao: 'ok' }> }) {
   const r = estado.resultado;
+  const e = r.entrada;
   // O regime do cálculo, não o do formulário (que pode ter mudado depois).
-  const simples = r.regime === 'SIMPLES_DAS' || r.regime === 'SIMPLES_REGULAR';
+  const simples = e.regime === 'SIMPLES_DAS' || e.regime === 'SIMPLES_REGULAR';
   return (
     <section className="resultado" aria-live="polite" aria-labelledby="titulo-resultado">
-      <h2 id="titulo-resultado">{r.descricao || 'Resultado'}</h2>
+      <div className="topo">
+        <h2 id="titulo-resultado">{e.descricao || 'Resultado'}</h2>
+        <BotoesExportar nome={e.descricao} montarAbas={() => abasDoResultado(r, new Date())} />
+      </div>
+      <p className="so-imprimir ajuda">
+        Gerado em {new Date().toLocaleString('pt-BR')} · tabela de regras {r.versaoRegras} · motor{' '}
+        {r.versaoMotor}
+      </p>
+      <ResumoEntrada entrada={e} />
       <p className="aviso aviso-estimativa">
         Premissa: o fornecedor mantém o preço líquido de {reaisMilesimos(r.precoLiquidoFornecedor)}{' '}
         (sem tributos), calculado a partir da sua nota de 2026. Se ele mantiver o preço bruto, o
@@ -308,13 +174,21 @@ function Resultado({ estado }: { estado: Extract<EstadoCalculadora, { situacao: 
         )}
       </p>
 
+      <p className="aviso aviso-pendente">{AVISO_REDUCOES}</p>
+
       <h3>Linha do tempo</h3>
       <LinhaDoTempo anos={r.anos} simples={simples} />
+
+      <h3>Preço psicológico</h3>
+      <PrecoPsicologico anos={r.anos} sugestoes={r.sugestoes} />
+
+      <h3>Cenários lado a lado</h3>
+      <CenariosLadoALado cenarios={r.cenarios} escolhido={e.cenario} />
 
       <h3>Simplificado x correto</h3>
       <Comparador
         simplificado={r.simplificado}
-        impostoSimplificado={r.impostoSimplificado}
+        impostoSimplificado={e.impostoSimplificado}
         anos={r.anos}
       />
 

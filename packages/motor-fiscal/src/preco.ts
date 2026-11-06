@@ -1,4 +1,4 @@
-import { apurarCreditos, reconstruirCompra } from './compra.js';
+import { apurarCreditos, reconstruirCompra, type Compra, type Creditos } from './compra.js';
 import { arredondarMoeda, D, dec, type Dec } from './decimal.js';
 import type { PassoMemoria } from './memoria.js';
 import {
@@ -62,14 +62,33 @@ export function statusDoAno(p: ParametrosAno): Status {
 
 const pct = (x: Dec) => x.toDecimalPlaces(4, D.ROUND_HALF_UP).toFixed(4);
 
-/**
- * Preço que mantém a margem pedida, num ano, com a memória de cálculo completa.
- * CBS e IBS (regime regular) são por fora: o cliente paga, a empresa repassa líquido do crédito.
- */
-export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): ResultadoAno {
+type Contexto = {
+  readonly p: ParametrosAno;
+  readonly perfil: PerfilVenda;
+  readonly memoria: PassoMemoria[];
+  readonly status: Status;
+  readonly regras: string[];
+  readonly compra: Compra;
+  readonly creditos: Creditos;
+  readonly custo: Dec;
+  readonly das: Dec;
+  readonly parcela: Dec | null;
+  readonly aIcms: Dec;
+  readonly aPc: Dec;
+  readonly aDas: Dec;
+  readonly porFora: Dec;
+  readonly dentro: Dec;
+  readonly desp: Dec;
+  /** Preço com tributo = preço × k, porque CBS/IBS incidem sobre o preço sem ICMS e PIS/Cofins. */
+  readonly k: Dec;
+};
+
+const MOTIVO_PARTILHA_DAS =
+  'Simples com IBS/CBS no regime regular exige a parcela de CBS/IBS do DAS por anexo, que ainda não foi confirmada nas Resoluções CGSN.';
+
+/** Compra, créditos e alíquotas efetivas da venda no ano; ou dado pendente. */
+function prepararAno(e: EntradaPrecificacao, p: ParametrosAno): Contexto | ResultadoAno {
   const memoria: PassoMemoria[] = [];
-  const status = statusDoAno(p);
-  const regras = p.regras.map((r) => `${r.id}@${r.versao}`);
   const perfil = e.perfil;
 
   const simples = perfil.regime === 'SIMPLES_DAS' || perfil.regime === 'SIMPLES_REGULAR';
@@ -83,8 +102,7 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
       ano: p.ano,
       situacao: 'DADO_PENDENTE',
       status: 'PENDENTE',
-      motivo:
-        'Simples com IBS/CBS no regime regular exige a parcela de CBS/IBS do DAS por anexo, que ainda não foi confirmada nas Resoluções CGSN.',
+      motivo: MOTIVO_PARTILHA_DAS,
       memoria,
     };
   }
@@ -104,28 +122,39 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
   const aDas = regularNoSimples ? das.times(UM.minus(parcela as Dec)) : das;
   const porFora =
     p.cbsIbsComEfeito && perfil.regime !== 'SIMPLES_DAS' ? dec(p.cbs).plus(dec(p.ibs)) : ZERO;
-  const dentro = aIcms.plus(aPc).plus(aDas);
-  const desp = dec(perfil.despesasVariaveis);
-  const m = dec(perfil.margem);
-  // Preço com tributo = P × k, porque CBS/IBS incidem sobre P sem ICMS e PIS/Cofins.
-  const k = UM.plus(porFora.times(UM.minus(aIcms).minus(aPc)));
+  return {
+    p,
+    perfil,
+    memoria,
+    status: statusDoAno(p),
+    regras: p.regras.map((r) => `${r.id}@${r.versao}`),
+    compra,
+    creditos,
+    custo,
+    das,
+    parcela,
+    aIcms,
+    aPc,
+    aDas,
+    porFora,
+    dentro: aIcms.plus(aPc).plus(aDas),
+    desp: dec(perfil.despesasVariaveis),
+    k: UM.plus(porFora.times(UM.minus(aIcms).minus(aPc))),
+  };
+}
 
-  const divisor =
-    perfil.baseMargem === 'RECEITA_LIQUIDA'
-      ? UM.minus(dentro).times(UM.minus(m)).minus(desp)
-      : UM.minus(dentro).minus(desp).minus(m.times(k));
-  if (divisor.lte(0)) {
-    throw new RangeError('Tributos, despesas e margem tornam o preço impossível (divisor ≤ 0).');
-  }
-  const preco = arredondarMoeda(custo.div(divisor));
+const ehResultado = (x: Contexto | ResultadoAno): x is ResultadoAno => 'situacao' in x;
 
-  const icms = arredondarMoeda(preco.times(aIcms));
-  const pisCofins = arredondarMoeda(preco.times(aPc));
-  const valorDas = arredondarMoeda(preco.times(aDas));
+/** Tributos, lucro e margens de um preço de venda (sem CBS/IBS por fora). */
+function montarResultado(c: Contexto, preco: Dec, passoPreco: PassoMemoria): ResultadoAno {
+  const { p, perfil, memoria, regras, custo } = c;
+  const icms = arredondarMoeda(preco.times(c.aIcms));
+  const pisCofins = arredondarMoeda(preco.times(c.aPc));
+  const valorDas = arredondarMoeda(preco.times(c.aDas));
   const base = preco.minus(icms).minus(pisCofins);
-  const cbs = porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.cbs)));
-  const ibs = porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.ibs)));
-  const despesas = arredondarMoeda(preco.times(desp));
+  const cbs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.cbs)));
+  const ibs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.ibs)));
+  const despesas = arredondarMoeda(preco.times(c.desp));
   const tributosDentro = icms.plus(pisCofins).plus(valorDas);
   const receitaLiquida = preco.minus(tributosDentro);
   // Preço com tributo ≥ preço > receita líquida: basta checar a menor das bases das margens.
@@ -139,9 +168,9 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
   if (perfil.regime === 'SIMPLES_DAS') {
     creditoTransferido = !p.cbsIbsComEfeito
       ? '0.00'
-      : parcela === null
+      : c.parcela === null
         ? null
-        : arredondarMoeda(preco.times(das).times(parcela)).toFixed(2);
+        : arredondarMoeda(preco.times(c.das).times(c.parcela)).toFixed(2);
   } else {
     creditoTransferido = cbs.plus(ibs).toFixed(2);
   }
@@ -151,30 +180,14 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
       id: 'venda.custo-liquido',
       descricao: 'Custo líquido de aquisição',
       formula: 'total da nota − créditos',
-      entradas: { totalNota: compra.totalNota.toFixed(2), creditos: creditos.total.toFixed(2) },
+      entradas: {
+        totalNota: c.compra.totalNota.toFixed(2),
+        creditos: c.creditos.total.toFixed(2),
+      },
       resultado: custo.toFixed(2),
       regras,
     },
-    {
-      id: 'venda.preco',
-      descricao:
-        perfil.baseMargem === 'RECEITA_LIQUIDA'
-          ? 'Preço que mantém a margem sobre a receita líquida'
-          : 'Preço que mantém a margem sobre o preço com tributo',
-      formula:
-        perfil.baseMargem === 'RECEITA_LIQUIDA'
-          ? 'custo ÷ ((1 − tributos por dentro) × (1 − margem) − despesas)'
-          : 'custo ÷ (1 − tributos por dentro − despesas − margem × k), k = 1 + CBS/IBS × (1 − ICMS − PIS/Cofins)',
-      entradas: {
-        custo: custo.toFixed(2),
-        tributosPorDentro: pct(dentro),
-        cbsIbsPorFora: pct(porFora),
-        despesas: perfil.despesasVariaveis,
-        margem: perfil.margem,
-      },
-      resultado: preco.toFixed(2),
-      regras,
-    },
+    passoPreco,
     {
       id: 'venda.tributos',
       descricao: 'Tributos da venda',
@@ -208,12 +221,12 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
   return {
     ano: p.ano,
     situacao: 'CALCULADO',
-    status,
+    status: c.status,
     valores: {
       preco: preco.toFixed(2),
       precoComTributo: precoComTributo.toFixed(2),
       custoLiquido: custo.toFixed(2),
-      totalNotaCompra: compra.totalNota.toFixed(2),
+      totalNotaCompra: c.compra.totalNota.toFixed(2),
       icms: icms.toFixed(2),
       pisCofins: pisCofins.toFixed(2),
       das: valorDas.toFixed(2),
@@ -227,6 +240,88 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
     },
     memoria,
   };
+}
+
+/**
+ * Preço que mantém a margem pedida, num ano, com a memória de cálculo completa.
+ * CBS e IBS (regime regular) são por fora: o cliente paga, a empresa repassa líquido do crédito.
+ */
+export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): ResultadoAno {
+  const c = prepararAno(e, p);
+  if (ehResultado(c)) return c;
+  const { perfil } = c;
+  const m = dec(perfil.margem);
+  const divisor =
+    perfil.baseMargem === 'RECEITA_LIQUIDA'
+      ? UM.minus(c.dentro).times(UM.minus(m)).minus(c.desp)
+      : UM.minus(c.dentro).minus(c.desp).minus(m.times(c.k));
+  if (divisor.lte(0)) {
+    throw new RangeError('Tributos, despesas e margem tornam o preço impossível (divisor ≤ 0).');
+  }
+  const preco = arredondarMoeda(c.custo.div(divisor));
+  return montarResultado(c, preco, {
+    id: 'venda.preco',
+    descricao:
+      perfil.baseMargem === 'RECEITA_LIQUIDA'
+        ? 'Preço que mantém a margem sobre a receita líquida'
+        : 'Preço que mantém a margem sobre o preço com tributo',
+    formula:
+      perfil.baseMargem === 'RECEITA_LIQUIDA'
+        ? 'custo ÷ ((1 − tributos por dentro) × (1 − margem) − despesas)'
+        : 'custo ÷ (1 − tributos por dentro − despesas − margem × k), k = 1 + CBS/IBS × (1 − ICMS − PIS/Cofins)',
+    entradas: {
+      custo: c.custo.toFixed(2),
+      tributosPorDentro: pct(c.dentro),
+      cbsIbsPorFora: pct(c.porFora),
+      despesas: perfil.despesasVariaveis,
+      margem: perfil.margem,
+    },
+    resultado: preco.toFixed(2),
+    regras: c.regras,
+  });
+}
+
+const CENTAVO = new D('0.01');
+
+/**
+ * Resultado de um preço escolhido (o que o cliente paga, com CBS e IBS por fora), por exemplo
+ * o preço psicológico: tributos, lucro e as margens efetivas nesse preço. Como a CBS e o IBS
+ * são arredondados à parte, usa o maior preço sem tributo cujo total não passa do informado.
+ */
+export function avaliarPreco(
+  e: EntradaPrecificacao,
+  p: ParametrosAno,
+  precoComTributo: string,
+): ResultadoAno {
+  const alvo = dec(precoComTributo);
+  if (alvo.lte(0)) throw new RangeError('O preço informado precisa ser maior que zero.');
+  const c = prepararAno(e, p);
+  if (ehResultado(c)) return c;
+
+  const cbsIbs = (preco: Dec) => {
+    const base = preco
+      .minus(arredondarMoeda(preco.times(c.aIcms)))
+      .minus(arredondarMoeda(preco.times(c.aPc)));
+    return c.porFora.isZero()
+      ? ZERO
+      : arredondarMoeda(base.times(dec(p.cbs))).plus(arredondarMoeda(base.times(dec(p.ibs))));
+  };
+  // O total cresce com o preço: parte de 2 centavos abaixo da divisão e sobe enquanto couber.
+  const inicio = D.max(ZERO, arredondarMoeda(alvo.div(c.k)).minus(CENTAVO.times(2)));
+  let preco = inicio;
+  for (let passo = 1; passo <= 6; passo++) {
+    const candidato = inicio.plus(CENTAVO.times(passo));
+    if (candidato.plus(cbsIbs(candidato)).lte(alvo)) preco = candidato;
+  }
+
+  return montarResultado(c, preco, {
+    id: 'venda.preco-informado',
+    descricao: 'Preço escolhido (o cliente paga)',
+    formula: 'maior preço sem CBS/IBS cujo total com CBS e IBS não passa do informado',
+    entradas: { clientePaga: alvo.toFixed(2), k: c.k.toString() },
+    resultado: preco.toFixed(2),
+    regras: c.regras,
+  });
 }
 
 /** Linha do tempo de 2026 a 2033 (ou outro intervalo) com os parâmetros de cada ano. */

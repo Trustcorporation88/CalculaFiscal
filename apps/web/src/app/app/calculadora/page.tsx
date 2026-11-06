@@ -37,7 +37,8 @@ export default async function Calculadora({ searchParams }: Props) {
           <Link href="/app/calculadora">Limpar o formulário</Link>
         ) : (
           <Link href="/app/calculadora?exemplo=coca">Preencher com o exemplo da Coca-Cola</Link>
-        )}
+        )}{' '}
+        · <Link href="/app/calculadora/lote">Simular vários produtos por planilha</Link>
       </p>
       {ehExemplo && (
         <p role="status" className="aviso aviso-estimativa">
