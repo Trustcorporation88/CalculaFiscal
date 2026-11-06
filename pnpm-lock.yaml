@@ -91,6 +91,9 @@ importers:
 
   packages/regras:
     dependencies:
+      '@calculafiscal/motor-fiscal':
+        specifier: workspace:*
+        version: link:../motor-fiscal
       yaml:
         specifier: ^2.6.0
         version: 2.9.1

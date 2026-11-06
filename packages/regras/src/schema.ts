@@ -15,6 +15,7 @@ export const Conferencia = z.enum(['OK', 'CONFERIR']);
 
 export const Tributo = z.enum([
   'CBS',
+  'IBS',
   'IBS_UF',
   'IBS_MUN',
   'IS',
@@ -24,6 +25,8 @@ export const Tributo = z.enum([
   'PIS',
   'COFINS',
   'IPI',
+  /** Parâmetros da transição (fatores e chaves liga/desliga), não alíquotas. */
+  'TRANSICAO',
 ]);
 
 export const Regra = z
@@ -47,6 +50,8 @@ export const Regra = z
       especifica: z.object({ valor: decimalStr, unidade: z.string() }).optional(),
     }),
     fonte: z.object({ norma: z.string(), artigo: z.string(), url: z.string().url().optional() }),
+    /** Cenários em que a regra vale. Vazio = cenário base. */
+    cenarios: z.array(z.string().regex(/^[a-z0-9-]+$/)).default([]),
     status: Status,
     conferencia: Conferencia,
     observacao: z.string().optional(),
@@ -54,7 +59,7 @@ export const Regra = z
   .strict()
   .superRefine((r, ctx) => {
     if (r.vigencia.fim !== null && r.vigencia.fim < r.vigencia.inicio) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'fim da vigência antes do início' });
+      ctx.addIssue({ code: 'custom', message: 'fim da vigência antes do início' });
     }
   });
 

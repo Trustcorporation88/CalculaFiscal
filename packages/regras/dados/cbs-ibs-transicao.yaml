@@ -11,6 +11,17 @@ regras:
     status: EM_VIGOR
     conferencia: CONFERIR
 
+  - id: ibs.teste-2026
+    versao: 1
+    tributo: IBS
+    descricao: IBS em 2026, ano de teste
+    vigencia: { inicio: '2026-01-01', fim: '2026-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.001' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 125' }
+    status: EM_VIGOR
+    conferencia: CONFERIR
+
   - id: cbs.2027
     versao: 1
     tributo: CBS

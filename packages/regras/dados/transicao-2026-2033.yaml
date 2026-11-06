@@ -1,0 +1,359 @@
+# Parâmetros anuais da transição. Fatores e chaves (1 = vale, 0 = não vale), não alíquotas.
+# Números de artigo do ADCT/EC 132 e da LC 214 (alterada pela LC 227/2026) ainda a conferir na íntegra.
+regras:
+  # --- CBS/IBS com efeito econômico (2026 é ano de teste: destaque compensado ou dispensado) ---
+  - id: transicao.cbs-ibs-efeito
+    versao: 1
+    tributo: TRANSICAO
+    descricao: CBS e IBS de 2026 sem efeito econômico (ano de teste)
+    vigencia: { inicio: '2026-01-01', fim: '2026-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0' }
+    fonte: { norma: 'EC 132/2023; LC 214/2025', artigo: 'ADCT art. 125; regras do ano de teste' }
+    status: EM_VIGOR
+    conferencia: CONFERIR
+    observacao: 'Compensação com PIS/Cofins ou dispensa do recolhimento conforme cumprimento das obrigações acessórias'
+  - id: transicao.cbs-ibs-efeito
+    versao: 2
+    tributo: TRANSICAO
+    descricao: CBS e IBS com efeito econômico pleno
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: {}
+    valor: { aliquota: '1' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT arts. 126 e 127' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+
+  # --- PIS/Cofins ---
+  - id: transicao.pis-cofins
+    versao: 1
+    tributo: TRANSICAO
+    descricao: PIS e Cofins vigentes
+    vigencia: { inicio: '2026-01-01', fim: '2026-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '1' }
+    fonte: { norma: 'Leis 10.637/2002 e 10.833/2003', artigo: 'regime atual' }
+    status: EM_VIGOR
+    conferencia: OK
+  - id: transicao.pis-cofins
+    versao: 2
+    tributo: TRANSICAO
+    descricao: PIS e Cofins extintos
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: {}
+    valor: { aliquota: '0' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 126' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+
+  # --- IPI ---
+  - id: transicao.ipi
+    versao: 1
+    tributo: TRANSICAO
+    descricao: IPI pela TIPI vigente
+    vigencia: { inicio: '2026-01-01', fim: '2026-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '1' }
+    fonte: { norma: 'Decreto 11.158/2022 (TIPI)', artigo: 'tabela' }
+    status: EM_VIGOR
+    conferencia: OK
+  - id: transicao.ipi
+    versao: 2
+    tributo: TRANSICAO
+    descricao: IPI com alíquota zero (exceto Zona Franca de Manaus)
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: {}
+    valor: { aliquota: '0' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 126' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'A PEC 22/2026 (PROPOSTO) manteria o IPI dos produtos do IS até o início do IS (janeiro de 2027). Granularidade anual do motor: tratado na nota do ano.'
+
+  # --- Fator sobre as alíquotas de ICMS e ISS ---
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 1,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS integrais',
+      vigencia: { inicio: '2026-01-01', fim: '2028-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '1' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 128' },
+      status: EM_VIGOR,
+      conferencia: CONFERIR,
+    }
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 2,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS a 90%',
+      vigencia: { inicio: '2029-01-01', fim: '2029-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.9' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 128' },
+      status: PUBLICADO_EFEITO_FUTURO,
+      conferencia: CONFERIR,
+    }
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 3,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS a 80%',
+      vigencia: { inicio: '2030-01-01', fim: '2030-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.8' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 128' },
+      status: PUBLICADO_EFEITO_FUTURO,
+      conferencia: CONFERIR,
+    }
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 4,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS a 70%',
+      vigencia: { inicio: '2031-01-01', fim: '2031-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.7' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 128' },
+      status: PUBLICADO_EFEITO_FUTURO,
+      conferencia: CONFERIR,
+    }
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 5,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS a 60%',
+      vigencia: { inicio: '2032-01-01', fim: '2032-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.6' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 128' },
+      status: PUBLICADO_EFEITO_FUTURO,
+      conferencia: CONFERIR,
+    }
+  - {
+      id: transicao.fator-icms-iss,
+      versao: 6,
+      tributo: TRANSICAO,
+      descricao: 'ICMS e ISS extintos',
+      vigencia: { inicio: '2033-01-01', fim: null },
+      abrangencia: {},
+      valor: { aliquota: '0' },
+      fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 129' },
+      status: PUBLICADO_EFEITO_FUTURO,
+      conferencia: CONFERIR,
+    }
+
+  # --- CBS de 2028 a 2033 (sem número oficial) ---
+  - id: cbs.2028
+    versao: 1
+    tributo: CBS
+    descricao: 'CBS 2028: referência ainda não fixada; repete 2027 (11,3% − 0,1 p.p.)'
+    vigencia: { inicio: '2028-01-01', fim: '2028-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.112' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 18, I' }
+    status: ESTIMATIVA
+    conferencia: OK
+  - id: cbs.2029-2033
+    versao: 1
+    tributo: CBS
+    descricao: 'CBS 2029 a 2033: mantém a referência do TCU para 2027 (11,3%)'
+    vigencia: { inicio: '2029-01-01', fim: null }
+    abrangencia: {}
+    valor: { aliquota: '0.113' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 18, I' }
+    status: ESTIMATIVA
+    conferencia: OK
+
+  # --- IBS de 2029 a 2033: fração da referência final (10%, 20%, 30%, 40%, 100%) ---
+  # Referência final do IBS (ESTIMATIVA): central 16,7% (IVA total 28%), baixo 15,2% (26,5%), alto 18,2% (29,5%).
+  - {
+      id: ibs.2029,
+      versao: 1,
+      tributo: IBS,
+      descricao: 'IBS 2029: 10% da referência (central)',
+      vigencia: { inicio: '2029-01-01', fim: '2029-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0167' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2030,
+      versao: 1,
+      tributo: IBS,
+      descricao: 'IBS 2030: 20% da referência (central)',
+      vigencia: { inicio: '2030-01-01', fim: '2030-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0334' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2031,
+      versao: 1,
+      tributo: IBS,
+      descricao: 'IBS 2031: 30% da referência (central)',
+      vigencia: { inicio: '2031-01-01', fim: '2031-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0501' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2032,
+      versao: 1,
+      tributo: IBS,
+      descricao: 'IBS 2032: 40% da referência (central)',
+      vigencia: { inicio: '2032-01-01', fim: '2032-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0668' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2033,
+      versao: 1,
+      tributo: IBS,
+      descricao: 'IBS 2033: referência final (central)',
+      vigencia: { inicio: '2033-01-01', fim: null },
+      abrangencia: {},
+      valor: { aliquota: '0.167' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2029,
+      versao: 2,
+      tributo: IBS,
+      descricao: 'IBS 2029 (baixo)',
+      vigencia: { inicio: '2029-01-01', fim: '2029-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0152' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-baixo],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2030,
+      versao: 2,
+      tributo: IBS,
+      descricao: 'IBS 2030 (baixo)',
+      vigencia: { inicio: '2030-01-01', fim: '2030-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0304' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-baixo],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2031,
+      versao: 2,
+      tributo: IBS,
+      descricao: 'IBS 2031 (baixo)',
+      vigencia: { inicio: '2031-01-01', fim: '2031-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0456' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-baixo],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2032,
+      versao: 2,
+      tributo: IBS,
+      descricao: 'IBS 2032 (baixo)',
+      vigencia: { inicio: '2032-01-01', fim: '2032-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0608' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-baixo],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2033,
+      versao: 2,
+      tributo: IBS,
+      descricao: 'IBS 2033 (baixo)',
+      vigencia: { inicio: '2033-01-01', fim: null },
+      abrangencia: {},
+      valor: { aliquota: '0.152' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-baixo],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2029,
+      versao: 3,
+      tributo: IBS,
+      descricao: 'IBS 2029 (alto)',
+      vigencia: { inicio: '2029-01-01', fim: '2029-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0182' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-alto],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2030,
+      versao: 3,
+      tributo: IBS,
+      descricao: 'IBS 2030 (alto)',
+      vigencia: { inicio: '2030-01-01', fim: '2030-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0364' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-alto],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2031,
+      versao: 3,
+      tributo: IBS,
+      descricao: 'IBS 2031 (alto)',
+      vigencia: { inicio: '2031-01-01', fim: '2031-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0546' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-alto],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2032,
+      versao: 3,
+      tributo: IBS,
+      descricao: 'IBS 2032 (alto)',
+      vigencia: { inicio: '2032-01-01', fim: '2032-12-31' },
+      abrangencia: {},
+      valor: { aliquota: '0.0728' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-alto],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
+  - {
+      id: ibs.2033,
+      versao: 3,
+      tributo: IBS,
+      descricao: 'IBS 2033 (alto)',
+      vigencia: { inicio: '2033-01-01', fim: null },
+      abrangencia: {},
+      valor: { aliquota: '0.182' },
+      fonte: { norma: 'LC 214/2025', artigo: 'art. 18, II' },
+      cenarios: [ibs-alto],
+      status: ESTIMATIVA,
+      conferencia: OK,
+    }
