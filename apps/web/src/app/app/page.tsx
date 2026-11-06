@@ -38,6 +38,11 @@ export default async function Painel({ searchParams }: Props) {
           Abrir a calculadora de preço
         </Link>
       </p>
+      {vinculos.some((v) => v.papel === 'dono' || v.papel === 'administrador') && (
+        <p>
+          <Link href="/app/api">API e tokens de integração</Link>
+        </p>
+      )}
       <p>
         <Link href="/conta/seguranca">Segurança da conta</Link>
       </p>
