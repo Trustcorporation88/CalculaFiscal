@@ -13,6 +13,40 @@ export interface PedidoAno {
   readonly ncm?: string;
   /** Data de referência dentro do ano. Padrão: 1º de julho. */
   readonly data?: string;
+  /** Tratamento de CBS/IBS do produto (cClassTrib). Ausente ou 000001 = tributação integral. */
+  readonly cClassTrib?: string;
+}
+
+export const TRIBUTACAO_INTEGRAL = '000001';
+
+/** Tratamento com redução de CBS/IBS disponível na tabela de regras. */
+export interface Tratamento {
+  readonly codigo: string;
+  readonly descricao: string;
+  /** Fração reduzida: '1' = alíquota zero, '0.6' = redução de 60%. */
+  readonly reducao: string;
+}
+
+const ehReducao = (r: Regra, codigo: string) =>
+  r.tributo === 'REDUCAO_CBS_IBS' && r.abrangencia.cClassTrib.includes(codigo);
+
+/** Tratamentos com redução, um por código (a versão mais recente), em ordem de código. */
+export function tratamentosDisponiveis(regras: readonly Regra[]): Tratamento[] {
+  const porCodigo = new Map<string, Regra>();
+  for (const r of regras) {
+    if (r.tributo !== 'REDUCAO_CBS_IBS') continue;
+    for (const codigo of r.abrangencia.cClassTrib) {
+      const atual = porCodigo.get(codigo);
+      if (!atual || r.versao > atual.versao) porCodigo.set(codigo, r);
+    }
+  }
+  return [...porCodigo.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([codigo, r]) => ({
+      codigo,
+      descricao: r.descricao.replace(/^\d{6}: /, ''),
+      reducao: r.valor.aliquota,
+    }));
 }
 
 const soDigitos = (ncm: string) => ncm.replace(/\D/g, '');
@@ -135,8 +169,27 @@ export function resolverAno(regras: readonly Regra[], pedido: PedidoAno): Parame
     }
   }
 
+  let reducaoCbsIbs = '0';
+  const codigo = pedido.cClassTrib;
+  if (codigo && codigo !== TRIBUTACAO_INTEGRAL) {
+    if (!regras.some((r) => ehReducao(r, codigo))) {
+      throw new RangeError(`O tratamento ${codigo} ainda não está na tabela de reduções.`);
+    }
+    // Antes da vigência (2026, ano de teste) a redução não tem efeito: fica a regra do ano.
+    const vigente = escolher(
+      vigentes.filter((r) => ehReducao(r, codigo)),
+      cenario,
+      `redução ${codigo}`,
+    );
+    if (vigente) {
+      reducaoCbsIbs = vigente.valor.aliquota;
+      refs.push(comoRef(vigente));
+    }
+  }
+
   return {
     ano: pedido.ano,
+    reducaoCbsIbs,
     cbs: cbs.valor.aliquota,
     ibs: ibs.toString(),
     cbsIbsComEfeito: efeito.valor.aliquota === '1',

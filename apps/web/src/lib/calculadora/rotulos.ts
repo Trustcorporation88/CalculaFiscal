@@ -4,6 +4,7 @@ import type { BaseMargem, Regime } from '@calculafiscal/motor-fiscal';
 export const ROTULO_CAMPO: Readonly<Record<string, string>> = {
   descricao: 'Descrição',
   ncm: 'NCM',
+  cClassTrib: 'Tratamento de CBS e IBS (cClassTrib)',
   cenario: 'Cenário',
   notaCompra: 'Total da nota por unidade (R$)',
   aliquotaIcms: 'ICMS do fornecedor (%)',

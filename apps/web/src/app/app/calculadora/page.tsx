@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { tabelaOficial } from '@calculafiscal/regras';
+import { tabelaOficial, tratamentosDisponiveis } from '@calculafiscal/regras';
 import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
 import { EXEMPLO_COCA, FORMULARIO_VAZIO } from '@/lib/calculadora/exemplos';
 import { exigirSessao } from '@/lib/sessao';
@@ -14,7 +14,7 @@ export default async function Calculadora({ searchParams }: Props) {
   await exigirSessao();
   const { exemplo } = await searchParams;
   const ehExemplo = exemplo === 'coca';
-  const { versao } = tabelaOficial();
+  const { versao, regras } = tabelaOficial();
 
   return (
     <main className="conteudo largo">
@@ -49,6 +49,7 @@ export default async function Calculadora({ searchParams }: Props) {
       <FormularioCalculadora
         key={ehExemplo ? 'coca' : 'vazio'}
         iniciais={ehExemplo ? EXEMPLO_COCA : FORMULARIO_VAZIO}
+        tratamentos={tratamentosDisponiveis(regras)}
       />
     </main>
   );

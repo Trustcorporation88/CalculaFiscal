@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
-import { AVISO_REDUCOES } from '@/lib/calculadora/avisos';
+import { AVISO_LOTE } from '@/lib/calculadora/avisos';
 import { linhasDaTabela, lerCsv, type Celula, type LeituraTabela } from '@/lib/calculadora/lote';
 import { abasDoLote, abasDoModeloLote } from '@/lib/calculadora/planilha';
 import { CampoCenario, CamposVenda } from '@/components/calculadora/campos';
@@ -131,7 +131,7 @@ function ResultadoLote({ estado }: { estado: Extract<EstadoLote, { situacao: 'ok
         Na tela: o que o cliente paga em alguns anos e o preço psicológico sugerido. A planilha traz
         todos os anos de 2026 a 2033, com o status de cada um.
       </p>
-      <p className="aviso aviso-pendente">{AVISO_REDUCOES}</p>
+      <p className="aviso aviso-pendente">{AVISO_LOTE}</p>
       <div className="rolagem">
         <table className="tabela">
           <thead>

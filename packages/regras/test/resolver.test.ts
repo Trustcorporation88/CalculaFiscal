@@ -12,6 +12,7 @@ import {
   resolverAno,
   resolverPeriodo,
   tabelaOficial,
+  tratamentosDisponiveis,
   versaoDasRegras,
   type Regra,
 } from '../src/index.js';
@@ -175,5 +176,36 @@ describe('tabela oficial', () => {
     expect(t.versao).toBe(versaoDasRegras(DADOS));
     expect(t.regras).toEqual(regras);
     expect(tabelaOficial()).toBe(t);
+  });
+});
+
+describe('reduções por tratamento (cClassTrib)', () => {
+  it('tabela traz os 16 tratamentos de mercadoria, com alíquota zero e 60%', () => {
+    const t = tratamentosDisponiveis(regras);
+    expect(t).toHaveLength(16);
+    expect(t.find((x) => x.codigo === '200003')).toMatchObject({ reducao: '1' });
+    expect(t.find((x) => x.codigo === '200034')).toMatchObject({ reducao: '0.6' });
+    expect(t[0]?.descricao).not.toMatch(/^\d{6}:/);
+  });
+
+  it('aplica a redução de 2027 em diante, com a regra nas referências', () => {
+    const p = resolverAno(regras, { ano: 2027, ncm: '1006.30.21', cClassTrib: '200003' });
+    expect(p.reducaoCbsIbs).toBe('1');
+    expect(p.regras.some((r) => r.id === 'reducao.cclasstrib-200003')).toBe(true);
+    expect(resolverAno(regras, { ano: 2026, cClassTrib: '200003' }).reducaoCbsIbs).toBe('0');
+    expect(resolverAno(regras, { ano: 2033, cClassTrib: '000001' }).reducaoCbsIbs).toBe('0');
+    expect(resolverAno(regras, { ano: 2033 }).reducaoCbsIbs).toBe('0');
+  });
+
+  it('código fora da tabela é recusado, não tratado como integral', () => {
+    expect(() => resolverAno(regras, { ano: 2027, cClassTrib: '200005' })).toThrow(RangeError);
+  });
+
+  it('a versão mais recente de um tratamento é a listada', () => {
+    const r = regras.find((x) => x.id === 'reducao.cclasstrib-200034') as Regra;
+    const nova = { ...r, versao: 2, valor: { ...r.valor, aliquota: '0.5' } };
+    expect(
+      tratamentosDisponiveis([nova, ...regras]).find((x) => x.codigo === '200034')?.reducao,
+    ).toBe('0.5');
   });
 });

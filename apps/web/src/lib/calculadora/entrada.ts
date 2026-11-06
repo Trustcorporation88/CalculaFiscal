@@ -9,6 +9,8 @@ export type ValoresFormulario = Readonly<Record<string, string>>;
 export interface EntradaCalculadora {
   readonly descricao: string;
   readonly ncm: string | null;
+  /** Tratamento de CBS/IBS (cClassTrib); 000001 = tributação integral. */
+  readonly cClassTrib: string;
   readonly cenario: Cenario;
   readonly notaCompra: string;
   readonly aliquotaIcms: string;
@@ -95,6 +97,9 @@ export function lerEntrada(v: ValoresFormulario): LeituraEntrada {
   const cenario = (texto('cenario') || 'base') as Cenario;
   if (!CENARIOS.includes(cenario)) erros['cenario'] = 'Cenário desconhecido.';
 
+  const cClassTrib = texto('cClassTrib') || '000001';
+  if (!/^\d{6}$/.test(cClassTrib)) erros['cClassTrib'] = 'cClassTrib com 6 dígitos, ex.: 200034.';
+
   const ncmBruto = texto('ncm');
   if (ncmBruto !== '' && !NCM.test(ncmBruto)) erros['ncm'] = 'NCM com 8 dígitos, ex.: 2202.10.00.';
 
@@ -106,6 +111,7 @@ export function lerEntrada(v: ValoresFormulario): LeituraEntrada {
   const entrada: EntradaCalculadora = {
     descricao: texto('descricao').slice(0, 120),
     ncm: ncmBruto === '' ? null : ncmBruto,
+    cClassTrib,
     cenario,
     notaCompra: valor('notaCompra', { positivo: true }),
     aliquotaIcms: percentual('aliquotaIcms') as string,

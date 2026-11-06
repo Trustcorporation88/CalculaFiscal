@@ -1,4 +1,5 @@
 import { arredondarMoeda, D, dec, type Dec } from './decimal.js';
+import { aliquotasCbsIbs } from './efetivas.js';
 import type { PassoMemoria } from './memoria.js';
 import type { Fornecimento, ParametrosAno, PerfilVenda } from './tipos.js';
 
@@ -59,8 +60,9 @@ export function reconstruirCompra(
   const ipi = arredondarMoeda(precoFornecedor.times(aIpi));
 
   const baseCbsIbs = precoFornecedor.minus(icmsProprio).minus(pisCofins);
-  const cbs = p.cbsIbsComEfeito ? arredondarMoeda(baseCbsIbs.times(dec(p.cbs))) : ZERO;
-  const ibs = p.cbsIbsComEfeito ? arredondarMoeda(baseCbsIbs.times(dec(p.ibs))) : ZERO;
+  const ef = aliquotasCbsIbs(p);
+  const cbs = p.cbsIbsComEfeito ? arredondarMoeda(baseCbsIbs.times(ef.cbs)) : ZERO;
+  const ibs = p.cbsIbsComEfeito ? arredondarMoeda(baseCbsIbs.times(ef.ibs)) : ZERO;
 
   let icmsSt = ZERO;
   if (f.substituicaoTributaria) {
@@ -102,8 +104,13 @@ export function reconstruirCompra(
       descricao: p.cbsIbsComEfeito
         ? 'CBS e IBS destacados pelo fornecedor (por fora)'
         : 'CBS e IBS de teste: destaque sem efeito econômico',
-      formula: '(valor da operação − ICMS − PIS/Cofins) × alíquota',
-      entradas: { base: baseCbsIbs.toFixed(2), cbs: p.cbs, ibs: p.ibs },
+      formula: '(valor da operação − ICMS − PIS/Cofins) × alíquota × (1 − redução do produto)',
+      entradas: {
+        base: baseCbsIbs.toFixed(2),
+        cbs: p.cbs,
+        ibs: p.ibs,
+        reducaoDoProduto: ef.reducao.toString(),
+      },
       resultado: `CBS ${cbs.toFixed(2)} + IBS ${ibs.toFixed(2)}`,
       regras: ref(p),
     },

@@ -30,6 +30,11 @@ export interface ParametrosAno {
   readonly ipiVigente: boolean;
   /** Imposto Seletivo do produto no ano (0 quando não incide). */
   readonly aliquotaIs: string;
+  /**
+   * Fração da CBS e do IBS reduzida pelo tratamento do produto (cClassTrib): '0.6' na redução de
+   * 60%, '1' na alíquota zero. Ausente = tributação integral. Vale na compra e na venda.
+   */
+  readonly reducaoCbsIbs?: string;
   readonly regras: readonly ReferenciaRegra[];
 }
 

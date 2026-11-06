@@ -27,6 +27,7 @@ export {
 } from './preco.js';
 
 /** Versão do motor, devolvida em toda resposta da API para tornar o resultado reproduzível. */
-export const VERSAO_MOTOR = '0.3.0';
+export const VERSAO_MOTOR = '0.4.0';
 export { precoPsicologico } from './psicologico.js';
+export { aliquotasCbsIbs } from './efetivas.js';
 export { precoLiquidoPelaNota, type PrecoLiquidoDaNota } from './nota.js';
