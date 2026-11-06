@@ -77,6 +77,8 @@ Nota de 2026: valor da operação R$ 4,41 (com ICMS de R$ 0,79 e PIS/Cofins de R
 
 ## Limitações conhecidas
 
+- **Nota em centavos não fixa o preço líquido.** A calculadora parte do total da nota (R$ 4,89) e acha o preço líquido do fabricante; qualquer valor entre R$ 3,040 e R$ 3,053 fecha a mesma nota. As tabelas acima usam R$ 3,040; a tela usa o centavo inteiro mais ao meio da faixa (R$ 3,050) e por isso mostra, por exemplo, R$ 7,31 em 2027 no Simples (R$ 7,28 aqui). A tela informa a faixa junto da premissa.
+
 - A premissa de preço líquido constante do fabricante pesa muito no resultado. Falta um cenário em que o fabricante **mantém o preço bruto**.
 - No Simples, o DAS de produtos com ST ou monofásicos não inclui as parcelas de ICMS e de PIS/Cofins. Os 8% vieram do vídeo e precisam ser recalculados por anexo.
 - Granularidade anual, com data de referência em 1º de julho. Janeiro de 2027, que fica sem IS e, sem a PEC, sem IPI, ainda não é tratado mês a mês.

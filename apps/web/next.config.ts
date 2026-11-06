@@ -14,7 +14,7 @@ const csp = [
 
 const config: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@calculafiscal/motor-fiscal'],
+  transpilePackages: ['@calculafiscal/motor-fiscal', '@calculafiscal/regras'],
   async headers() {
     return [
       {

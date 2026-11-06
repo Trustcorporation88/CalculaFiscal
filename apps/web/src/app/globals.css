@@ -6,7 +6,13 @@
   --cor-borda: #d6d3cc;
   --cor-erro: #b42318;
   --cor-ok: #1e7a4c;
+  --status-vigor: #1e7a4c;
+  --status-futuro: #1f4e79;
+  --status-proposto: #6b4fa3;
+  --status-pendente: #b45309;
+  --status-estimativa: #8a6d1f;
   --raio: 6px;
+  --raio-cartao: 10px;
   --fonte: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
 }
@@ -19,6 +25,12 @@
     --cor-borda: #2c3a52;
     --cor-erro: #f97066;
     --cor-ok: #5cc48e;
+    --cor-acento: #e0b25e;
+    --status-vigor: #5cc48e;
+    --status-futuro: #7fb0e0;
+    --status-proposto: #b49ae6;
+    --status-pendente: #f2a65a;
+    --status-estimativa: #d9bf6a;
   }
 }
 
@@ -129,4 +141,387 @@ button:disabled {
 
 code {
   word-break: break-all;
+}
+
+/* Calculadora */
+
+.conteudo.largo {
+  max-width: 1200px;
+}
+
+a.botao {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: var(--raio);
+  background: var(--cor-primaria);
+  color: var(--cor-papel);
+  text-decoration: none;
+}
+
+select {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: var(--cor-papel);
+  color: inherit;
+}
+
+.calculadora {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.calculadora fieldset {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-cartao);
+  padding: 16px;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.calculadora legend {
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.campo {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-width: 0;
+}
+
+.campo > input:not([type='checkbox']),
+.campo > select {
+  width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+.campo-caixa {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.campo-caixa input {
+  width: 20px;
+  height: 20px;
+}
+
+input[aria-invalid='true'] {
+  border-color: var(--cor-erro);
+}
+
+.erro-campo {
+  color: var(--cor-erro);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.calculadora button[type='submit'] {
+  justify-self: start;
+  font-weight: 600;
+}
+
+.resultado h3 {
+  margin-top: 32px;
+}
+
+.rolagem {
+  overflow-x: auto;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-cartao);
+}
+
+.tabela {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.tabela caption {
+  text-align: left;
+  padding: 8px 12px;
+}
+
+.tabela th,
+.tabela td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabela thead th {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  white-space: normal;
+  min-width: 96px;
+  max-width: 140px;
+  vertical-align: bottom;
+}
+
+.tabela tbody tr:last-child > * {
+  border-bottom: none;
+}
+
+.numero {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tabela td.numero {
+  text-align: right;
+}
+
+.destaque {
+  font-weight: 700;
+  color: var(--cor-primaria);
+}
+
+.linha-pendente td {
+  font-style: italic;
+}
+
+.selo {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.selo-em_vigor {
+  color: var(--status-vigor);
+}
+
+.selo-publicado_efeito_futuro {
+  color: var(--status-futuro);
+}
+
+.selo-proposto {
+  color: var(--status-proposto);
+}
+
+.selo-pendente {
+  color: var(--status-pendente);
+}
+
+.selo-estimativa {
+  color: var(--status-estimativa);
+}
+
+.aviso-estimativa {
+  color: var(--status-estimativa);
+}
+
+.aviso-pendente {
+  color: var(--status-pendente);
+}
+
+.comparador {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.cartao {
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-cartao);
+  padding: 16px;
+}
+
+.cartao h3 {
+  margin-top: 0;
+}
+
+.valor-grande {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: left;
+}
+
+.lista-anos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.lista-anos li {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.375rem;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+details {
+  border-bottom: 1px solid var(--cor-borda);
+  padding: 8px 0;
+}
+
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.memoria {
+  display: grid;
+  gap: 12px;
+  padding-left: 24px;
+}
+
+.memoria p {
+  margin: 0;
+}
+
+.memoria-entradas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 4px 0;
+  font-size: 0.875rem;
+}
+
+.memoria-entradas div {
+  display: flex;
+  gap: 4px;
+}
+
+.memoria-entradas dt {
+  opacity: 0.8;
+}
+
+.memoria-entradas dt::after {
+  content: ':';
+}
+
+.memoria-entradas dd {
+  margin: 0;
+}
+
+.bloco {
+  display: block;
+}
+
+.coluna-escolhida {
+  background: color-mix(in srgb, var(--cor-primaria) 10%, transparent);
+}
+
+.botoes-exportar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.resumo-entrada {
+  margin-bottom: 12px;
+}
+
+.linha-erro td,
+.linha-erro th {
+  color: var(--cor-erro);
+}
+
+.erros-linha {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.so-imprimir {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  :root {
+    --cor-tinta: #000;
+    --cor-papel: #fff;
+    --cor-primaria: #1f4e79;
+    --cor-acento: #c28a2c;
+    --cor-borda: #999;
+    --cor-erro: #b42318;
+    --cor-ok: #1e7a4c;
+    --status-vigor: #1e7a4c;
+    --status-futuro: #1f4e79;
+    --status-proposto: #6b4fa3;
+    --status-pendente: #b45309;
+    --status-estimativa: #8a6d1f;
+    color-scheme: light;
+  }
+
+  body {
+    font-size: 10pt;
+  }
+
+  .nao-imprimir,
+  .conteudo > header,
+  .conteudo > p,
+  .conteudo > .aviso {
+    display: none !important;
+  }
+
+  .so-imprimir {
+    display: block;
+  }
+
+  .conteudo.largo {
+    max-width: none;
+    padding: 0;
+  }
+
+  .rolagem {
+    overflow: visible;
+    border: none;
+  }
+
+  .tabela {
+    font-size: 8pt;
+  }
+
+  .tabela th,
+  .tabela td {
+    padding: 3px 5px;
+  }
+
+  .tabela thead th {
+    min-width: 0;
+  }
+
+  .resultado h3 {
+    margin-top: 16px;
+    break-after: avoid;
+  }
+
+  tr,
+  .memoria li,
+  .cartao {
+    break-inside: avoid;
+  }
+
+  summary {
+    list-style: none;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }

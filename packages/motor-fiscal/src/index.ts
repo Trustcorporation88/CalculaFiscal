@@ -18,6 +18,7 @@ export {
 export { reconstruirCompra, apurarCreditos, type Compra, type Creditos } from './compra.js';
 export {
   precificarAno,
+  avaliarPreco,
   linhaDoTempo,
   statusDoAno,
   type EntradaPrecificacao,
@@ -26,4 +27,6 @@ export {
 } from './preco.js';
 
 /** Versão do motor, devolvida em toda resposta da API para tornar o resultado reproduzível. */
-export const VERSAO_MOTOR = '0.2.0';
+export const VERSAO_MOTOR = '0.3.0';
+export { precoPsicologico } from './psicologico.js';
+export { precoLiquidoPelaNota, type PrecoLiquidoDaNota } from './nota.js';

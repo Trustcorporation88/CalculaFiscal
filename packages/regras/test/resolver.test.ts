@@ -6,7 +6,15 @@ import {
   type ResultadoAno,
 } from '@calculafiscal/motor-fiscal';
 import { describe, expect, it } from 'vitest';
-import { carregarRegras, resolverAno, resolverPeriodo, type Regra } from '../src/index.js';
+import {
+  carregarRegras,
+  montarRegras,
+  resolverAno,
+  resolverPeriodo,
+  tabelaOficial,
+  versaoDasRegras,
+  type Regra,
+} from '../src/index.js';
 
 const DADOS = fileURLToPath(new URL('../dados', import.meta.url));
 const regras = carregarRegras(DADOS);
@@ -95,6 +103,16 @@ describe('resolverAno', () => {
     expect(resolverAno(regras, { ano: 2033, cenario: 'ibs-alto' }).ibs).toBe('0.182');
   });
 
+  it('rejeita id@versão duplicado entre arquivos', () => {
+    const arquivo = { regras: [{ ...regras[0] }] };
+    expect(() =>
+      montarRegras([
+        { nome: 'a.yaml', conteudo: arquivo },
+        { nome: 'b.yaml', conteudo: arquivo },
+      ]),
+    ).toThrow(/duplicada/);
+  });
+
   it('falha alto quando falta regra ou há ambiguidade', () => {
     expect(() => resolverAno([], { ano: 2027 })).toThrow(/Nenhuma regra vigente/);
     const cbs = regras.find((r) => r.id === 'cbs.2027') as Regra;
@@ -145,5 +163,17 @@ describe('integração: linha do tempo da Coca-Cola com as tabelas reais', () =>
 
   it('nenhum ano chega perto dos R$ 11,51 do cálculo simplificado', () => {
     for (const r of anos) expect(Number(valores(r).precoComTributo)).toBeLessThan(11.51);
+  });
+});
+
+describe('tabela oficial', () => {
+  it('carrega as regras do pacote uma vez, com impressão digital', () => {
+    const t = tabelaOficial();
+    expect(t.regras).toHaveLength(regras.length);
+    expect(t.versao).toMatch(/^[0-9a-f]{12}$/);
+    // O pacote embutido corresponde aos YAML atuais.
+    expect(t.versao).toBe(versaoDasRegras(DADOS));
+    expect(t.regras).toEqual(regras);
+    expect(tabelaOficial()).toBe(t);
   });
 });

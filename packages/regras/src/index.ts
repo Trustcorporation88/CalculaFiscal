@@ -1,27 +1,39 @@
+import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { ArquivoRegras, type Regra } from './schema.js';
+import type { Regra } from './schema.js';
+import { montarRegras } from './tabela.js';
 
 export * from './schema.js';
 export { vigentesEm } from './vigencia.js';
 export * from './resolver.js';
+export { montarRegras, tabelaOficial, type TabelaDeRegras } from './tabela.js';
+
+const arquivosYaml = (diretorio: string) =>
+  readdirSync(diretorio)
+    .filter((f) => f.endsWith('.yaml'))
+    .sort();
 
 /** Carrega e valida todos os arquivos YAML de um diretório. Falha se houver id@versão duplicado. */
 export function carregarRegras(diretorio: string): Regra[] {
-  const regras: Regra[] = [];
-  const vistos = new Set<string>();
-  for (const arquivo of readdirSync(diretorio)
-    .filter((f) => f.endsWith('.yaml'))
-    .sort()) {
-    const conteudo: unknown = parse(readFileSync(join(diretorio, arquivo), 'utf8'));
-    const { regras: lidas } = ArquivoRegras.parse(conteudo);
-    for (const r of lidas) {
-      const chave = `${r.id}@${r.versao}`;
-      if (vistos.has(chave)) throw new Error(`Regra duplicada: ${chave} (${arquivo})`);
-      vistos.add(chave);
-      regras.push(r);
-    }
+  return montarRegras(
+    arquivosYaml(diretorio).map((nome) => ({
+      nome,
+      conteudo: parse(readFileSync(join(diretorio, nome), 'utf8')) as unknown,
+    })),
+  );
+}
+
+/** Impressão digital estável do conteúdo dos arquivos YAML (mesmo algoritmo do gerador). */
+export function versaoDasRegras(diretorio: string): string {
+  const hash = createHash('sha256');
+  for (const nome of arquivosYaml(diretorio)) {
+    hash
+      .update(nome)
+      .update('\u0000')
+      .update(readFileSync(join(diretorio, nome)))
+      .update('\u0000');
   }
-  return regras;
+  return hash.digest('hex').slice(0, 12);
 }
