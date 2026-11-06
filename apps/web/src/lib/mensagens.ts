@@ -12,6 +12,10 @@ export const MENSAGENS = {
   mfa_obrigatorio:
     'Administradores precisam ativar a verificação em duas etapas antes de continuar.',
   mfa_ativado: 'Verificação em duas etapas ativada.',
+  recuperacao_enviada:
+    'Se houver uma conta com este e-mail, enviamos um link para criar uma nova senha.',
+  senha_alterada: 'Senha alterada. Use a nova senha no próximo acesso.',
+  senhas_diferentes: 'As duas senhas não são iguais.',
 } as const;
 
 export type CodigoMensagem = keyof typeof MENSAGENS;

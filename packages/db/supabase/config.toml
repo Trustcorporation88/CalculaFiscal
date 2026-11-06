@@ -428,3 +428,17 @@ project_id = "ebfawpisbfkstpcstswl"
 [remotes.staging.auth]
 site_url = "https://web-staging-50d4.up.railway.app"
 additional_redirect_urls = ["https://web-staging-50d4.up.railway.app/auth/callback", "http://localhost:3000/auth/callback"]
+
+# Modelos de e-mail com token_hash: o link funciona mesmo aberto em outro aparelho ou navegador
+# (o fluxo PKCE padrão exige o mesmo navegador em que o cadastro foi feito).
+[auth.email.template.confirmation]
+subject = "Confirme seu e-mail no CalculaFiscal"
+content_path = "./supabase/templates/confirmacao.html"
+
+[auth.email.template.magic_link]
+subject = "Seu link de acesso ao CalculaFiscal"
+content_path = "./supabase/templates/link-magico.html"
+
+[auth.email.template.recovery]
+subject = "Troca de senha no CalculaFiscal"
+content_path = "./supabase/templates/recuperacao.html"

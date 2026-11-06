@@ -26,10 +26,8 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const rotaLogada = ['/app', '/conta', '/mfa'].some((p) => request.nextUrl.pathname.startsWith(p));
   if (rotaLogada && !data.user) {
-    const destino = request.nextUrl.clone();
-    destino.pathname = '/entrar';
-    destino.search = '';
-    return NextResponse.redirect(destino);
+    // SITE_URL e não request.url: atrás do proxy do Railway a URL interna é localhost:8080.
+    return NextResponse.redirect(new URL('/entrar', process.env['SITE_URL'] ?? request.url));
   }
   return resposta;
 }
