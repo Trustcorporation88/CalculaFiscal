@@ -39,6 +39,14 @@ Todas estão com status **PROPOSTA** e aguardam aprovação. Formato: contexto, 
 
 **Decisão:** tokens de serviço opacos (prefixo `pf_live_` / `pf_test_`), guardados como hash argon2id, com escopos e rotação por sobreposição. Tabela `idempotency_keys` (organização, chave, hash do corpo, resposta) com retenção de 24 h. Erros em `application/problem+json`. Rate limit por token em Postgres (janela deslizante) na Onda 1, com troca para Redis se for preciso. Webhooks assinados com HMAC-SHA256 sobre `timestamp.corpo`, retentativa exponencial e tabela de entregas.
 
+**Revisão (06/11/2026, primeira entrega da API):**
+
+- **Prefixo:** `cf_test_` e `cf_live_` (CalculaFiscal), seguido de 64 caracteres hexadecimais (256 bits gerados no banco).
+- **Hash:** SHA-256 em vez de argon2id. O segredo tem alta entropia, então o hash rápido é seguro, e o hash determinístico permite achar o token direto pelo índice. Argon2 protege senhas fracas, que não é o caso; é a prática do GitHub nos tokens dele.
+- **Leitura:** a coluna do hash não é legível por nenhum papel de usuário. A autenticação passa pela função `api_autenticar(hash)`, chamada pelo servidor com a chave pública. Sem o segredo, ninguém chega ao hash.
+- **Limite:** janela fixa de 1 minuto em Postgres (`api_uso`), 60 requisições por token, contada na mesma chamada da autenticação. A janela deslizante fica para quando houver Redis.
+- **Ainda não feitos:** idempotência persistida, webhooks e lote assíncrono. Entram com o worker (pg-boss).
+
 ## ADR-008: Deploy no Railway e observabilidade
 
 **Decisão:** serviços `web` e `worker`, ambientes de staging, produção e um por PR. Health check em `/api/health`. Sentry, logs JSON com `request_id` (pino) e monitor externo de disponibilidade.

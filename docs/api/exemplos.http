@@ -1,0 +1,78 @@
+### Exemplos da API /v1 (VS Code REST Client ou JetBrains HTTP Client)
+# Defina o token no ambiente local do editor; não o grave neste arquivo.
+@base = https://web-staging-50d4.up.railway.app
+@token = {{$dotenv CALCULAFISCAL_TOKEN}}
+
+### Contrato (sem token)
+GET {{base}}/v1/openapi.json
+
+### Cenários
+GET {{base}}/v1/cenarios
+Authorization: Bearer {{token}}
+
+### Tratamentos de CBS/IBS com redução vigentes em 2027
+GET {{base}}/v1/regras?data=2027-07-01&tributo=REDUCAO_CBS_IBS
+Authorization: Bearer {{token}}
+
+### Regras que alcançam a Coca-Cola em março de 2027
+GET {{base}}/v1/regras?data=2027-03-01&ncm=2202.10.00
+Authorization: Bearer {{token}}
+
+### Caso Coca-Cola: distribuidora no Simples (DAS 8%), premissas estimadas
+POST {{base}}/v1/simulacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cenario": "base",
+  "venda": {
+    "regime": "SIMPLES_DAS",
+    "aliquotaDas": "0.08",
+    "despesasVariaveis": "0.06",
+    "margem": "0.25",
+    "baseMargem": "PRECO_COM_TRIBUTO"
+  },
+  "itens": [
+    {
+      "idExterno": "produto-123",
+      "descricao": "Coca-Cola 600 ml",
+      "ncm": "2202.10.00",
+      "compra": {
+        "totalNota": "4.89",
+        "aliquotaIcms": "0.18",
+        "aliquotaIpi": "0.026",
+        "aliquotaPisCofins": "0.13",
+        "substituicaoTributaria": { "mva": "0.42", "aliquotaInterna": "0.18" }
+      }
+    }
+  ]
+}
+
+### Arroz na cesta básica (alíquota zero de 2027 em diante), distribuidora no Lucro Real
+POST {{base}}/v1/simulacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "venda": {
+    "regime": "REAL",
+    "aliquotaIcmsSaida": "0.07",
+    "creditaIcmsEntrada": true,
+    "despesasVariaveis": "0.06",
+    "margem": "0.25"
+  },
+  "itens": [
+    {
+      "idExterno": "arroz-5kg",
+      "descricao": "Arroz 5 kg",
+      "ncm": "1006.30.21",
+      "cClassTrib": "200003",
+      "compra": {
+        "totalNota": "22.50",
+        "aliquotaIcms": "0.07",
+        "aliquotaIpi": "0",
+        "aliquotaPisCofins": "0"
+      }
+    }
+  ]
+}

@@ -529,3 +529,15 @@ summary {
     text-decoration: none;
   }
 }
+
+.token-criado p {
+  margin-top: 0;
+}
+
+code.token {
+  display: block;
+  padding: 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--raio);
+  user-select: all;
+}
