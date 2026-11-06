@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { D, precoSimplificado, VERSAO_MOTOR, type ResultadoAno } from '@calculafiscal/motor-fiscal';
+import { D, precoSimplificado, type ResultadoAno } from '@calculafiscal/motor-fiscal';
 import { CENARIOS, tabelaOficial, tratamentosDisponiveis } from '@calculafiscal/regras';
 import { reais } from '@/components/calculadora/formato';
 import { SeloStatus } from '@/components/calculadora/selo-status';
-import { Marca } from '@/components/marca';
 import { calcularLinhaDoTempo } from '@/lib/calculadora/calcular';
 import { lerEntrada } from '@/lib/calculadora/entrada';
 import { EXEMPLO_COCA } from '@/lib/calculadora/exemplos';
-import s from './inicio.module.css';
+import { CabecalhoPublico, RodapePublico } from '@/components/publico/estrutura';
+import s from '@/components/publico/publico.module.css';
 
 export const metadata: Metadata = {
   title: 'Calculadora Fiscal: preço e margem na Reforma Tributária, de 2026 a 2033',
@@ -39,7 +39,6 @@ function casoCocaCola() {
     simplificadoReforma,
     correto2027,
     acima,
-    versaoRegras: tabela.versao,
     tratamentos: tratamentosDisponiveis(tabela.regras).length,
   };
 }
@@ -125,22 +124,7 @@ export default function Inicio() {
 
   return (
     <div className={s.pagina}>
-      <header className={s.navegacao}>
-        <div className={s.faixa}>
-          <Marca />
-          <nav className={s.links} aria-label="Principal">
-            <a href="#caso">O caso</a>
-            <a href="#recursos">Recursos</a>
-            <a href="#api">API</a>
-            <Link href="/entrar" className={s.entrar}>
-              Entrar
-            </Link>
-            <Link href="/cadastro" className={s.botao}>
-              Criar conta
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <CabecalhoPublico />
 
       <main>
         <section className={`${s.faixa} ${s.heroi}`}>
@@ -270,6 +254,11 @@ export default function Inicio() {
           <div className={`${s.faixa} ${s.secao}`}>
             <p className={s.sobretitulo}>Recursos</p>
             <h2>Do produto avulso à carteira inteira</h2>
+            <p className={s.lide}>
+              <Link href="/funcionalidades" className={s.secundario}>
+                Ver como cada funcionalidade funciona
+              </Link>
+            </p>
             <div className={s.grade}>
               {RECURSOS.map((r) => (
                 <article key={r.titulo} className={s.cartao}>
@@ -343,16 +332,7 @@ Authorization: Bearer cf_live_…
         </section>
       </main>
 
-      <footer className={s.rodape}>
-        <div className={s.faixa}>
-          <Marca />
-          <p>
-            Simulação para apoio à decisão; não substitui a análise do contador responsável.
-            <br />
-            Tabela de regras {caso.versaoRegras} · motor {VERSAO_MOTOR}
-          </p>
-        </div>
-      </footer>
+      <RodapePublico />
     </div>
   );
 }

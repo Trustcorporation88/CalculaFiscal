@@ -44,6 +44,9 @@ export default async function Painel({ searchParams }: Props) {
         </p>
       )}
       <p>
+        <Link href="/funcionalidades">Como funciona cada funcionalidade</Link>
+      </p>
+      <p>
         <Link href="/conta/seguranca">Segurança da conta</Link>
       </p>
     </main>
