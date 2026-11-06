@@ -580,6 +580,20 @@
 .topoPagina {
   padding-top: 64px;
   padding-bottom: 32px;
+  scroll-margin-top: 68px;
+}
+
+.voltar {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cor-primaria);
+  text-decoration: none;
+}
+
+.voltar:hover {
+  text-decoration: underline;
 }
 
 .topoPagina h1 {

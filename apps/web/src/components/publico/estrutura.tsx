@@ -11,7 +11,8 @@ export function CabecalhoPublico() {
       <div className={s.faixa}>
         <Marca />
         <nav className={s.links} aria-label="Principal">
-          <Link href="/funcionalidades" className={s.sempre}>
+          {/* Com a âncora, o clique leva ao topo (lista completa) mesmo já estando na página. */}
+          <Link href="/funcionalidades#topo" className={s.sempre}>
             Funcionalidades
           </Link>
           <Link href="/#caso">O caso</Link>
@@ -35,7 +36,7 @@ export function RodapePublico() {
       <div className={s.faixa}>
         <Marca />
         <nav className={s.linksRodape} aria-label="Rodapé">
-          <Link href="/funcionalidades">Funcionalidades</Link>
+          <Link href="/funcionalidades#topo">Funcionalidades</Link>
           <Link href="/#caso">O caso</Link>
           <a href="/v1/openapi.json">API</a>
           <Link href="/entrar">Entrar</Link>
