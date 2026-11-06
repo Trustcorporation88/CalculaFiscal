@@ -429,10 +429,18 @@ project_id = "ebfawpisbfkstpcstswl"
 site_url = "https://web-staging-50d4.up.railway.app"
 additional_redirect_urls = ["https://web-staging-50d4.up.railway.app/auth/callback", "http://localhost:3000/auth/callback"]
 
-# TEMPORÁRIO (06/11/2026): sem confirmação por e-mail no staging enquanto o SMTP padrão do
-# Supabase (2 e-mails/hora) bloqueia os testes. Religar ao configurar o SMTP próprio (Resend).
-[remotes.staging.auth.email]
-enable_confirmations = false
+# SMTP próprio (Resend, trustcorp.com.br) salvo no painel do projeto: a confirmação por e-mail
+# segue o padrão (ligada), como na produção.
+
+# Sobrescritas da produção (supabase config push --project-ref qgwqnxkcyhgmlwuirlnc).
+# Confirmação por e-mail ligada (padrão). O SMTP próprio (Resend) é configurado no painel do
+# Supabase pelo dono da chave; antes de um config push, confira com config diff que ele não é apagado.
+[remotes.production]
+project_id = "qgwqnxkcyhgmlwuirlnc"
+
+[remotes.production.auth]
+site_url = "https://imposto.trustcorp.com.br"
+additional_redirect_urls = ["https://imposto.trustcorp.com.br/auth/callback"]
 
 # Modelos de e-mail com token_hash: o link funciona mesmo aberto em outro aparelho ou navegador
 # (o fluxo PKCE padrão exige o mesmo navegador em que o cadastro foi feito).
