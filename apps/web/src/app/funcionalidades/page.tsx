@@ -9,6 +9,7 @@ import {
 } from '@calculafiscal/regras';
 import { SeloStatus } from '@/components/calculadora/selo-status';
 import { CabecalhoPublico, RodapePublico } from '@/components/publico/estrutura';
+import { LinkFuncionalidades } from '@/components/publico/link-funcionalidades';
 import s from '@/components/publico/publico.module.css';
 import { rotuloReducao } from '@/lib/calculadora/avisos';
 
@@ -57,9 +58,9 @@ function Bloco({
         <h2 id={`titulo-${id}`}>{titulo}</h2>
         <p className={s.lide}>{resumo}</p>
         <div className={s.textoBloco}>{children}</div>
-        <a href="#topo" className={s.voltar}>
+        <LinkFuncionalidades className={s.voltar}>
           ↑ Ver todas as funcionalidades
-        </a>
+        </LinkFuncionalidades>
       </div>
       {naTela && (
         <aside className={s.naTela} aria-label={`Na tela: ${titulo}`}>
