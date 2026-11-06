@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
 import { tabelaOficial } from '@calculafiscal/regras';
 import { Marca } from '@/components/marca';
+import { LinkFuncionalidades } from './link-funcionalidades';
 import s from './publico.module.css';
 
 /** Topo das páginas públicas (início e funcionalidades). */
@@ -11,10 +12,7 @@ export function CabecalhoPublico() {
       <div className={s.faixa}>
         <Marca />
         <nav className={s.links} aria-label="Principal">
-          {/* Com a âncora, o clique leva ao topo (lista completa) mesmo já estando na página. */}
-          <Link href="/funcionalidades#topo" className={s.sempre}>
-            Funcionalidades
-          </Link>
+          <LinkFuncionalidades className={s.sempre}>Funcionalidades</LinkFuncionalidades>
           <Link href="/#caso">O caso</Link>
           <Link href="/#api">API</Link>
           <Link href="/entrar" className={s.entrar}>
@@ -36,7 +34,7 @@ export function RodapePublico() {
       <div className={s.faixa}>
         <Marca />
         <nav className={s.linksRodape} aria-label="Rodapé">
-          <Link href="/funcionalidades#topo">Funcionalidades</Link>
+          <LinkFuncionalidades>Funcionalidades</LinkFuncionalidades>
           <Link href="/#caso">O caso</Link>
           <a href="/v1/openapi.json">API</a>
           <Link href="/entrar">Entrar</Link>
