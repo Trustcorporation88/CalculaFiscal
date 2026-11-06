@@ -5,8 +5,9 @@ import { Aviso } from '@/components/aviso';
 import { sair } from '../entrar/actions';
 import { usuarioAtual, supabaseServidor } from '@/lib/supabase/server';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Verificação em duas etapas | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Verificação em duas etapas | Calculadora Fiscal' };
 
 async function verificar(form: FormData) {
   'use server';
@@ -35,6 +36,9 @@ export default async function Mfa({ searchParams }: Props) {
   const { erro } = await searchParams;
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Verificação em duas etapas</h1>
       <p>Digite o código de 6 números do seu aplicativo autenticador.</p>
       <Aviso erro={erro} />

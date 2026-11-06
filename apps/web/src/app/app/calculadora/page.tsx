@@ -6,7 +6,7 @@ import { EXEMPLO_COCA, FORMULARIO_VAZIO } from '@/lib/calculadora/exemplos';
 import { exigirSessao } from '@/lib/sessao';
 import { FormularioCalculadora } from './formulario';
 
-export const metadata: Metadata = { title: 'Calculadora | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Calculadora | Calculadora Fiscal' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 

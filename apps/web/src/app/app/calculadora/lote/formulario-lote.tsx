@@ -83,7 +83,7 @@ export function FormularioLote({ iniciais }: { iniciais: ValoresFormulario }) {
               type="button"
               className="secundario"
               onClick={() =>
-                void baixarPlanilha(abasDoModeloLote(), 'modelo-lote-calculafiscal.xlsx')
+                void baixarPlanilha(abasDoModeloLote(), 'modelo-lote-calculadora-fiscal.xlsx')
               }
             >
               Baixar modelo (.xlsx)

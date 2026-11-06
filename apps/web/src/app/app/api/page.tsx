@@ -4,7 +4,7 @@ import { exigirSessao } from '@/lib/sessao';
 import { NovoToken } from './novo-token';
 import { RevogarToken } from './revogar';
 
-export const metadata: Metadata = { title: 'API | CalculaFiscal' };
+export const metadata: Metadata = { title: 'API | Calculadora Fiscal' };
 
 type Token = {
   id: string;

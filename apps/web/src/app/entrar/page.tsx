@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Aviso } from '@/components/aviso';
 import { entrarComSenha, enviarLinkMagico } from './actions';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Entrar | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Entrar | Calculadora Fiscal' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -12,6 +13,9 @@ export default async function Entrar({ searchParams }: Props) {
   const { erro, aviso } = await searchParams;
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Entrar</h1>
       <Aviso erro={erro} aviso={aviso} />
 

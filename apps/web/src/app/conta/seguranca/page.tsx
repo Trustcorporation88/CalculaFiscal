@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Aviso } from '@/components/aviso';
 import { exigirSessao } from '@/lib/sessao';
 import { CadastroMfa } from './cadastro-mfa';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Segurança da conta | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Segurança da conta | Calculadora Fiscal' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -16,6 +17,9 @@ export default async function Seguranca({ searchParams }: Props) {
 
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Segurança da conta</h1>
       <Aviso erro={erro} aviso={aviso} />
       <h2>Verificação em duas etapas</h2>

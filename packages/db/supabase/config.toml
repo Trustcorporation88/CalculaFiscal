@@ -445,13 +445,13 @@ additional_redirect_urls = ["https://imposto.trustcorp.com.br/auth/callback"]
 # Modelos de e-mail com token_hash: o link funciona mesmo aberto em outro aparelho ou navegador
 # (o fluxo PKCE padrão exige o mesmo navegador em que o cadastro foi feito).
 [auth.email.template.confirmation]
-subject = "Confirme seu e-mail no CalculaFiscal"
+subject = "Confirme seu e-mail na Calculadora Fiscal"
 content_path = "./supabase/templates/confirmacao.html"
 
 [auth.email.template.magic_link]
-subject = "Seu link de acesso ao CalculaFiscal"
+subject = "Seu link de acesso à Calculadora Fiscal"
 content_path = "./supabase/templates/link-magico.html"
 
 [auth.email.template.recovery]
-subject = "Troca de senha no CalculaFiscal"
+subject = "Troca de senha na Calculadora Fiscal"
 content_path = "./supabase/templates/recuperacao.html"

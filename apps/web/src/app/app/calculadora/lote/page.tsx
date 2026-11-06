@@ -7,7 +7,7 @@ import { LIMITE_LOTE } from '@/lib/calculadora/lote';
 import { exigirSessao } from '@/lib/sessao';
 import { FormularioLote } from './formulario-lote';
 
-export const metadata: Metadata = { title: 'Simulação em lote | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Simulação em lote | Calculadora Fiscal' };
 
 export default async function SimulacaoEmLote() {
   await exigirSessao();

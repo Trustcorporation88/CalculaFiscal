@@ -6,7 +6,7 @@ import { sair } from '../entrar/actions';
 import { exigirSessao } from '@/lib/sessao';
 import { BotaoEnviar } from '@/components/botao-enviar';
 
-export const metadata: Metadata = { title: 'Painel | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Painel | Calculadora Fiscal' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
