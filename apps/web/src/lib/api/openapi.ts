@@ -69,7 +69,7 @@ export function documentoOpenApi(): Esquema {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'CalculaFiscal API',
+      title: 'Calculadora Fiscal API',
       version: '1.0.0',
       description: [
         'Preço, margem e tributos (CBS, IBS, IS, ICMS e transição) de 2026 a 2033, com memória de cálculo.',

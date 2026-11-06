@@ -5,8 +5,9 @@ import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
 import { supabaseServidor, usuarioAtual } from '@/lib/supabase/server';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Nova senha | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Nova senha | Calculadora Fiscal' };
 
 const NovaSenha = z.object({ senha: z.string().min(10).max(200), confirmacao: z.string() });
 
@@ -42,6 +43,9 @@ export default async function PaginaNovaSenha({ searchParams }: Props) {
   if (aviso === 'senha_alterada') {
     return (
       <main className="cartao-auth">
+        <div className="cartao-marca">
+          <Marca />
+        </div>
         <h1>Senha alterada</h1>
         <Aviso aviso={aviso} />
         <p>
@@ -52,6 +56,9 @@ export default async function PaginaNovaSenha({ searchParams }: Props) {
   }
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Criar nova senha</h1>
       <Aviso erro={erro} />
       <form action={trocarSenha} className="formulario">

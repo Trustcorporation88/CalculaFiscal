@@ -13,7 +13,10 @@
   --status-estimativa: #8a6d1f;
   --raio: 6px;
   --raio-cartao: 10px;
-  --fonte: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --cor-superficie: #ffffff;
+  --cor-suave: #5b6478;
+  --sombra: 0 1px 2px rgb(20 33 61 / 6%), 0 8px 24px rgb(20 33 61 / 8%);
+  --fonte: var(--fonte-inter), Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
 }
 
@@ -31,6 +34,9 @@
     --status-proposto: #b49ae6;
     --status-pendente: #f2a65a;
     --status-estimativa: #d9bf6a;
+    --cor-superficie: #141e33;
+    --cor-suave: #9aa6bd;
+    --sombra: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 25%);
   }
 }
 
@@ -71,9 +77,35 @@ a {
 }
 
 .cartao-auth {
-  max-width: 420px;
+  max-width: 440px;
   margin: 48px auto;
-  padding: 24px 16px;
+  padding: 32px 28px;
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 16px;
+  box-shadow: var(--sombra);
+}
+
+.cartao-auth h1 {
+  font-size: 1.625rem;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+
+.cartao-auth h2 {
+  font-size: 1.0625rem;
+  margin: 28px 0 0;
+}
+
+.cartao-marca {
+  margin-bottom: 24px;
+}
+
+@media (max-width: 520px) {
+  .cartao-auth {
+    margin: 16px;
+    padding: 24px 18px;
+  }
 }
 
 .formulario {
@@ -84,7 +116,7 @@ a {
 
 input {
   font: inherit;
-  padding: 10px 12px;
+  padding: 11px 12px;
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio);
   background: transparent;
@@ -542,50 +574,26 @@ code.token {
   user-select: all;
 }
 
-/* Página inicial */
+/* Marca */
 
-.inicio .marca {
-  font-size: 1.375rem;
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cor-tinta);
+  text-decoration: none;
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+}
+
+.marca span {
+  white-space: nowrap;
+}
+
+.marca strong {
   font-weight: 700;
-  margin: 0;
 }
 
-.heroi {
-  padding: 48px 0 32px;
-}
-
-.heroi h1 {
-  font-size: 2.25rem;
-  line-height: 1.2;
-  max-width: 760px;
-  margin: 0 0 16px;
-}
-
-.subtitulo {
-  font-size: 1.125rem;
-  max-width: 720px;
-}
-
-.inicio section {
-  margin-bottom: 40px;
-}
-
-.lista-anos .selo {
-  margin-left: 8px;
-  vertical-align: middle;
-}
-
-.motivos li,
-.recursos li {
-  margin-bottom: 8px;
-}
-
-.rodape {
-  border-top: 1px solid var(--cor-borda);
-  padding-top: 16px;
-}
-
-.inicio .lista-anos li {
-  font-size: 1.125rem;
-  gap: 12px;
+.marca-simbolo {
+  flex: none;
 }

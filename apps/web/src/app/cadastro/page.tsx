@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { Aviso } from '@/components/aviso';
 import { cadastrar } from '../entrar/actions';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Criar conta | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Criar conta | Calculadora Fiscal' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
@@ -12,6 +13,9 @@ export default async function Cadastro({ searchParams }: Props) {
   const { erro } = await searchParams;
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Criar conta</h1>
       <Aviso erro={erro} />
       <form action={cadastrar} className="formulario">

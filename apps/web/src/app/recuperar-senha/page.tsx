@@ -7,8 +7,9 @@ import { cotaDeEmailEsgotada } from '@/lib/auth-erros';
 import { urlDoSite } from '@/lib/env';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Recuperar senha | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Recuperar senha | Calculadora Fiscal' };
 
 async function pedirLink(form: FormData) {
   'use server';
@@ -40,6 +41,9 @@ export default async function RecuperarSenha({ searchParams }: Props) {
   const { erro, aviso } = await searchParams;
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Recuperar senha</h1>
       <p>Informe o e-mail da conta. Enviaremos um link para criar uma nova senha.</p>
       <Aviso erro={erro} aviso={aviso} />

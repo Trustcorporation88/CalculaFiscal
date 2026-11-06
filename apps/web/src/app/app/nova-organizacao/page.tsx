@@ -5,8 +5,9 @@ import { Aviso } from '@/components/aviso';
 import { exigirSessao } from '@/lib/sessao';
 import { supabaseServidor } from '@/lib/supabase/server';
 import { BotaoEnviar } from '@/components/botao-enviar';
+import { Marca } from '@/components/marca';
 
-export const metadata: Metadata = { title: 'Nova organização | CalculaFiscal' };
+export const metadata: Metadata = { title: 'Nova organização | Calculadora Fiscal' };
 
 async function criar(form: FormData) {
   'use server';
@@ -26,6 +27,9 @@ export default async function NovaOrganizacao({ searchParams }: Props) {
   const { erro } = await searchParams;
   return (
     <main className="cartao-auth">
+      <div className="cartao-marca">
+        <Marca />
+      </div>
       <h1>Crie sua organização</h1>
       <p>Pode ser a sua empresa ou o seu escritório de contabilidade.</p>
       <Aviso erro={erro} />
