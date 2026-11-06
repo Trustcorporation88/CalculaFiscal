@@ -21,6 +21,9 @@ export default async function Entrar({ searchParams }: Props) {
         <input id="senha" name="senha" type="password" autoComplete="current-password" required />
         <button type="submit">Entrar</button>
       </form>
+      <p>
+        <Link href="/recuperar-senha">Esqueci a senha</Link>
+      </p>
 
       <h2>Ou receba um link de acesso</h2>
       <form action={enviarLinkMagico} className="formulario">
