@@ -98,6 +98,34 @@ export function rotaV1(
 
 export const TAMANHO_MAXIMO_CORPO = 256 * 1024;
 
+/**
+ * Lê o corpo em stream contando bytes (não caracteres) e cancela assim que passar do teto, para
+ * um corpo enorme sem Content-Length não ser carregado inteiro na memória. Nulo = grande demais.
+ */
+async function lerAteOLimite(requisicao: Request): Promise<string | null> {
+  if (!requisicao.body) return '';
+  const leitor = requisicao.body.getReader();
+  const partes: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await leitor.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > TAMANHO_MAXIMO_CORPO) {
+      await leitor.cancel();
+      return null;
+    }
+    partes.push(value);
+  }
+  const tudo = new Uint8Array(total);
+  let posicao = 0;
+  for (const parte of partes) {
+    tudo.set(parte, posicao);
+    posicao += parte.byteLength;
+  }
+  return new TextDecoder('utf-8').decode(tudo);
+}
+
 /** Lê o corpo JSON com limite de tamanho; devolve a resposta de erro quando não dá. */
 export async function lerCorpoJson(
   requisicao: Request,
@@ -111,8 +139,8 @@ export async function lerCorpoJson(
   if (declarado > TAMANHO_MAXIMO_CORPO) {
     return { ok: false, resposta: respostaProblema('corpo-grande', { requestId }) };
   }
-  const texto = await requisicao.text();
-  if (texto.length > TAMANHO_MAXIMO_CORPO) {
+  const texto = await lerAteOLimite(requisicao);
+  if (texto === null) {
     return { ok: false, resposta: respostaProblema('corpo-grande', { requestId }) };
   }
   try {

@@ -1,25 +1,34 @@
 import { z } from 'zod';
 import { CENARIOS } from '@calculafiscal/regras/cenarios';
 
+// Mensagens de validação do Zod em português (campos sem mensagem própria, chaves desconhecidas).
+z.config(z.locales.pt());
+
 /**
  * Contrato da API /v1. Estes schemas são a fonte da verdade: validam as requisições, conferem as
  * respostas nos testes e geram o OpenAPI 3.1 (GET /v1/openapi.json).
  * Valores monetários e alíquotas trafegam como string decimal com ponto ("8.02", "0.18").
  */
 
-const LIMITE = 1_000_000_000;
+// As restrições ficam em regex (e não em refine) para aparecerem no OpenAPI publicado.
 
+/** Decimal com ponto, até 9 dígitos inteiros (abaixo de R$ 1 bilhão) e 10 casas. */
 const Decimal = z
   .string()
-  .regex(/^\d+(\.\d+)?$/, 'decimal como texto, com ponto: "4.89"')
-  .max(24)
-  .refine((v) => Number(v) <= LIMITE, 'valor acima do limite de 1 bilhão');
+  .regex(
+    /^\d{1,9}(\.\d{1,10})?$/,
+    'decimal como texto, com ponto e até 9 dígitos inteiros: "4.89"',
+  );
 
+/** Fração menor que 1: "0", "0.18" (18%), "0.0925". */
 const Fracao = z
   .string()
-  .regex(/^\d+(\.\d+)?$/, 'fração como texto, com ponto: "0.18" para 18%')
-  .max(24)
-  .refine((v) => Number(v) < 1, 'fração precisa ser menor que 1 (100%)');
+  .regex(/^0(\.\d{1,10})?$/, 'fração menor que 1, como texto com ponto: "0.18" para 18%');
+
+/** Data de calendário real (AAAA-MM-DD), com ano bissexto: 2027-02-31 é recusada. */
+export const DataCalendario = z.iso.date({
+  error: 'data inexistente ou fora do formato AAAA-MM-DD',
+});
 
 const Status = z.enum([
   'EM_VIGOR',
@@ -28,7 +37,6 @@ const Status = z.enum([
   'PENDENTE',
   'ESTIMATIVA',
 ]);
-const Regime = z.enum(['SIMPLES_DAS', 'SIMPLES_REGULAR', 'PRESUMIDO', 'REAL']);
 const BaseMargem = z.enum(['PRECO_COM_TRIBUTO', 'RECEITA_LIQUIDA']);
 const Cenario = z.enum(CENARIOS);
 
@@ -79,32 +87,43 @@ export const ItemV1 = z
   })
   .strict();
 
-export const VendaV1 = z
-  .object({
-    regime: Regime,
-    aliquotaDas: Fracao.optional().describe('Obrigatória no Simples Nacional.'),
-    parcelaCbsIbsNoDas: Fracao.optional().describe(
-      'Parte do DAS que é CBS/IBS. Ainda não definida pelo CGSN: sem ela, o Simples regular volta como dado pendente.',
-    ),
-    aliquotaIcmsSaida: Fracao.default('0'),
-    creditaIcmsEntrada: z.boolean().default(false),
-    aliquotaPisCofinsSaida: Fracao.default('0'),
-    creditoPisCofinsEntrada: Fracao.default('0'),
-    despesasVariaveis: Fracao,
-    margem: Fracao,
-    baseMargem: BaseMargem.default('PRECO_COM_TRIBUTO'),
-  })
-  .strict()
-  .superRefine((v, ctx) => {
-    const simples = v.regime === 'SIMPLES_DAS' || v.regime === 'SIMPLES_REGULAR';
-    if (simples && v.aliquotaDas === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['aliquotaDas'],
-        message: 'Simples Nacional exige a alíquota efetiva do DAS.',
-      });
-    }
-  });
+const comuns = {
+  despesasVariaveis: Fracao,
+  margem: Fracao,
+  baseMargem: BaseMargem.default('PRECO_COM_TRIBUTO'),
+};
+
+/** Venda por regime: no Simples o DAS é obrigatório; no regime regular, os tributos da saída. */
+export const VendaV1 = z.discriminatedUnion('regime', [
+  z
+    .object({
+      regime: z.enum(['SIMPLES_DAS', 'SIMPLES_REGULAR']),
+      aliquotaDas: z
+        .string({
+          error: (iss) =>
+            iss.input === undefined
+              ? 'Simples Nacional exige a alíquota efetiva do DAS.'
+              : undefined,
+        })
+        .regex(/^0(\.\d{1,10})?$/, 'fração menor que 1, como texto com ponto: "0.08" para 8%')
+        .describe('Alíquota efetiva do DAS.'),
+      parcelaCbsIbsNoDas: Fracao.optional().describe(
+        'Parte do DAS que é CBS/IBS. Ainda não definida pelo CGSN: sem ela, o Simples regular volta como dado pendente.',
+      ),
+      ...comuns,
+    })
+    .strict(),
+  z
+    .object({
+      regime: z.enum(['PRESUMIDO', 'REAL']),
+      aliquotaIcmsSaida: Fracao.default('0'),
+      creditaIcmsEntrada: z.boolean().default(false),
+      aliquotaPisCofinsSaida: Fracao.default('0'),
+      creditoPisCofinsEntrada: Fracao.default('0'),
+      ...comuns,
+    })
+    .strict(),
+]);
 
 export const LIMITE_ITENS_SINCRONO = 20;
 
@@ -226,6 +245,8 @@ export const Problema = z
     detail: z.string().optional(),
     instance: z.string().optional(),
     codigo: z.string().describe('Código estável, igual ao final do type.'),
+    versao_motor: z.string(),
+    versao_regras: z.string(),
     request_id: z.string().optional(),
     erros: z
       .array(z.object({ campo: z.string(), mensagem: z.string() }))
@@ -274,11 +295,7 @@ export const RegraV1 = z.object({
 
 export const ConsultaRegrasV1 = z
   .object({
-    data: z
-      .string()
-      .regex(/^\d{4}-\d{2}-\d{2}$/)
-      .optional()
-      .describe('Data de vigência (AAAA-MM-DD). Padrão: hoje.'),
+    data: DataCalendario.optional().describe('Data de vigência (AAAA-MM-DD). Padrão: hoje.'),
     tributo: z.string().max(30).optional(),
     ncm: z
       .string()
@@ -294,6 +311,7 @@ export const ConsultaRegrasV1 = z
 
 export const RespostaRegrasV1 = z.object({
   request_id: z.string(),
+  versao_motor: z.string(),
   versao_regras: z.string(),
   data: z.string(),
   regras: z.array(RegraV1),
@@ -301,6 +319,7 @@ export const RespostaRegrasV1 = z.object({
 
 export const RespostaCenariosV1 = z.object({
   request_id: z.string(),
+  versao_motor: z.string(),
   versao_regras: z.string(),
   cenarios: z.array(z.object({ id: Cenario, descricao: z.string() })),
 });

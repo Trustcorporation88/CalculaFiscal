@@ -2,6 +2,7 @@ import { tabelaOficial } from '@calculafiscal/regras';
 import { describe, expect, it, vi } from 'vitest';
 import { autenticar, hashToken, type ConsultaToken } from '../src/lib/api/autenticacao';
 import {
+  ConsultaRegrasV1,
   EXEMPLO_SIMULACAO,
   RespostaCenariosV1,
   RespostaRegrasV1,
@@ -86,6 +87,27 @@ describe('validação da simulação', () => {
     delete semDas.venda.aliquotaDas;
     const r = SimulacaoV1.safeParse(semDas);
     expect(!r.success && r.error.issues[0]?.path).toEqual(['venda', 'aliquotaDas']);
+    expect(!r.success && r.error.issues[0]?.message).toBe(
+      'Simples Nacional exige a alíquota efetiva do DAS.',
+    );
+  });
+
+  it('mensagens do Zod sem texto próprio saem em português', () => {
+    const r = SimulacaoV1.safeParse({ ...EXEMPLO_SIMULACAO, outro: 1 });
+    expect(!r.success && r.error.issues[0]?.message).toMatch(/Chave/);
+  });
+
+  it('data inexistente na consulta de regras é recusada', () => {
+    expect(ConsultaRegrasV1.safeParse({ data: '2027-02-31' }).success).toBe(false);
+    expect(ConsultaRegrasV1.safeParse({ data: '2028-02-29' }).success).toBe(true);
+  });
+
+  it('o OpenAPI publica as mesmas restrições da validação (sem refine escondido)', () => {
+    const texto = JSON.stringify(documentoOpenApi());
+    // O padrão da fração, como aparece serializado no JSON.
+    expect(texto).toContain(JSON.stringify(String.raw`^0(\.\d{1,10})?$`));
+    expect(texto).toContain('"oneOf"');
+    expect(texto).toContain('"format":"date"');
   });
 
   it('item impossível volta com problema; os outros são calculados', () => {
@@ -176,8 +198,15 @@ describe('rotas /v1', () => {
     expect(r.status).toBe(401);
     expect(r.headers.get('Content-Type')).toMatch(/application\/problem\+json/);
     expect(r.headers.get('WWW-Authenticate')).toBe('Bearer');
-    const corpo = (await r.json()) as { codigo: string; request_id: string };
+    const corpo = (await r.json()) as {
+      codigo: string;
+      request_id: string;
+      versao_motor: string;
+      versao_regras: string;
+    };
     expect(corpo.codigo).toBe('token-invalido');
+    expect(corpo.versao_motor).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(corpo.versao_regras).toBe(tabela.versao);
     expect(corpo.request_id).toBe(r.headers.get('X-Request-Id'));
   });
 
@@ -212,6 +241,9 @@ describe('rotas /v1', () => {
     expect(!r415.ok && r415.resposta.status).toBe(415);
     const r413 = await lerCorpoJson(corpo('x'.repeat(TAMANHO_MAXIMO_CORPO + 1)), 'r');
     expect(!r413.ok && r413.resposta.status).toBe(413);
+    // Conta bytes, não caracteres: "é" ocupa 2 bytes em UTF-8.
+    const multibyte = await lerCorpoJson(corpo('é'.repeat(TAMANHO_MAXIMO_CORPO / 2 + 1)), 'r');
+    expect(!multibyte.ok && multibyte.resposta.status).toBe(413);
     const r400 = await lerCorpoJson(corpo('{'), 'r');
     expect(!r400.ok && r400.resposta.status).toBe(400);
     const ok = await lerCorpoJson(corpo('{"a":1}'), 'r');

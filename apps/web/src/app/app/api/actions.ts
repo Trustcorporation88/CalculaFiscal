@@ -49,10 +49,18 @@ export async function criarToken(_anterior: EstadoToken, form: FormData): Promis
   return { situacao: 'criado', token: criado.token, nome: dados.data.nome };
 }
 
-export async function revogarToken(form: FormData): Promise<void> {
+export type EstadoRevogacao = { readonly erro: string | null };
+
+/** Revoga e só atualiza a lista se o banco confirmar; a falha aparece ao lado do botão. */
+export async function revogarToken(
+  _anterior: EstadoRevogacao,
+  form: FormData,
+): Promise<EstadoRevogacao> {
   const { supabase } = await exigirSessao();
   const id = z.uuid().safeParse(form.get('id'));
-  if (!id.success) return;
-  await supabase.rpc('revogar_token_api', { token_id: id.data });
+  if (!id.success) return { erro: 'Token inválido.' };
+  const { error } = await supabase.rpc('revogar_token_api', { token_id: id.data });
+  if (error) return { erro: mensagemDoBanco(error.code) };
   revalidatePath('/app/api');
+  return { erro: null };
 }

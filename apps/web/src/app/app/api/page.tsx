@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BotaoEnviar } from '@/components/botao-enviar';
 import { exigirSessao } from '@/lib/sessao';
-import { revogarToken } from './actions';
 import { NovoToken } from './novo-token';
+import { RevogarToken } from './revogar';
 
 export const metadata: Metadata = { title: 'API | CalculaFiscal' };
 
@@ -26,7 +25,7 @@ export default async function PaginaApi() {
   // exigirSessao já obriga dono e administrador a estarem com MFA (AAL2).
   const { supabase, vinculos } = await exigirSessao();
   const admin = vinculos.filter((v) => v.papel === 'dono' || v.papel === 'administrador');
-  const { data: tokens } = await supabase
+  const { data: tokens, error: erroLista } = await supabase
     .from('api_tokens')
     .select(
       'id, organization_id, nome, prefixo, escopos, ambiente, criado_em, ultimo_uso_em, revogado_em',
@@ -63,7 +62,13 @@ export default async function PaginaApi() {
             }))}
           />
           <h2>Tokens</h2>
-          {(tokens ?? []).length === 0 ? (
+          {erroLista ? (
+            // Falha de leitura não pode parecer lista vazia: tokens ativos continuariam valendo.
+            <p role="alert" className="aviso aviso-erro">
+              Não foi possível carregar os tokens agora. Eles continuam valendo como estavam; tente
+              de novo em instantes.
+            </p>
+          ) : (tokens ?? []).length === 0 ? (
             <p className="ajuda">Nenhum token criado.</p>
           ) : (
             <div className="rolagem">
@@ -94,10 +99,7 @@ export default async function PaginaApi() {
                         {t.revogado_em ? (
                           `Revogado em ${data(t.revogado_em)}`
                         ) : (
-                          <form action={revogarToken}>
-                            <input type="hidden" name="id" value={t.id} />
-                            <BotaoEnviar className="secundario">Revogar</BotaoEnviar>
-                          </form>
+                          <RevogarToken id={t.id} />
                         )}
                       </td>
                     </tr>

@@ -18,7 +18,25 @@ import { corpoProblema } from './problema';
 
 function entradaDoItem(req: SimulacaoV1, item: SimulacaoV1['itens'][number]): EntradaCalculadora {
   const v = req.venda;
-  const simples = v.regime === 'SIMPLES_DAS' || v.regime === 'SIMPLES_REGULAR';
+  // A união por regime garante os campos de cada caso: DAS no Simples, tributos da saída no regular.
+  const saida =
+    'aliquotaDas' in v
+      ? {
+          aliquotaDas: v.aliquotaDas,
+          parcelaCbsIbsNoDas: v.parcelaCbsIbsNoDas ?? null,
+          aliquotaIcmsSaida: '0',
+          creditaIcmsEntrada: false,
+          aliquotaPisCofinsSaida: '0',
+          creditoPisCofinsEntrada: '0',
+        }
+      : {
+          aliquotaDas: null,
+          parcelaCbsIbsNoDas: null,
+          aliquotaIcmsSaida: v.aliquotaIcmsSaida,
+          creditaIcmsEntrada: v.creditaIcmsEntrada,
+          aliquotaPisCofinsSaida: v.aliquotaPisCofinsSaida,
+          creditoPisCofinsEntrada: v.creditoPisCofinsEntrada,
+        };
   return {
     descricao: item.descricao,
     ncm: item.ncm ?? null,
@@ -31,12 +49,7 @@ function entradaDoItem(req: SimulacaoV1, item: SimulacaoV1['itens'][number]): En
     substituicaoTributaria: item.compra.substituicaoTributaria,
     freteEDespesas: item.compra.freteEDespesas,
     regime: v.regime,
-    aliquotaDas: simples ? (v.aliquotaDas ?? null) : null,
-    parcelaCbsIbsNoDas: simples ? (v.parcelaCbsIbsNoDas ?? null) : null,
-    aliquotaIcmsSaida: simples ? '0' : v.aliquotaIcmsSaida,
-    creditaIcmsEntrada: !simples && v.creditaIcmsEntrada,
-    aliquotaPisCofinsSaida: simples ? '0' : v.aliquotaPisCofinsSaida,
-    creditoPisCofinsEntrada: simples ? '0' : v.creditoPisCofinsEntrada,
+    ...saida,
     despesasVariaveis: v.despesasVariaveis,
     margem: v.margem,
     baseMargem: v.baseMargem,
@@ -131,12 +144,19 @@ export function consultarRegras(
       conferencia: r.conferencia,
       observacao: r.observacao ?? null,
     }));
-  return { request_id: requestId, versao_regras: tabela.versao, data, regras };
+  return {
+    request_id: requestId,
+    versao_motor: VERSAO_MOTOR,
+    versao_regras: tabela.versao,
+    data,
+    regras,
+  };
 }
 
 export function listarCenarios(tabela: TabelaDeRegras, requestId: string) {
   return {
     request_id: requestId,
+    versao_motor: VERSAO_MOTOR,
     versao_regras: tabela.versao,
     cenarios: CENARIOS.map((id) => ({ id, descricao: DESCRICAO_CENARIOS[id] })),
   };

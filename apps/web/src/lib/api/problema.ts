@@ -1,3 +1,6 @@
+import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
+import { tabelaOficial } from '@calculafiscal/regras';
+
 /** Erros da API no formato RFC 9457 (application/problem+json), com códigos estáveis. */
 
 export const PROBLEMAS = {
@@ -20,6 +23,8 @@ export interface CorpoProblema {
   title: string;
   status: number;
   codigo: CodigoProblema;
+  versao_motor: string;
+  versao_regras: string;
   detail?: string;
   request_id?: string;
   erros?: { campo: string; mensagem: string }[];
@@ -39,6 +44,9 @@ export function corpoProblema(
     title,
     status,
     codigo,
+    // Como toda resposta da API: as versões que produziram (ou recusaram) o resultado.
+    versao_motor: VERSAO_MOTOR,
+    versao_regras: tabelaOficial().versao,
     ...(extras.detail ? { detail: extras.detail } : {}),
     ...(extras.requestId ? { request_id: extras.requestId } : {}),
     ...(extras.erros ? { erros: extras.erros } : {}),

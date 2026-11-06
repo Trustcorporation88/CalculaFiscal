@@ -26,8 +26,9 @@ A revogação vale na hora: a próxima requisição com o token já é recusada.
 
 ## Convenções
 
-- **Números:** valores monetários e alíquotas vão como texto decimal com ponto: `"8.02"` e `"0.18"` (18%). Nunca como número de ponto flutuante.
-- **Reprodutibilidade:** toda resposta traz `request_id`, `versao_motor` e `versao_regras`, para reproduzir o resultado depois. O cabeçalho `X-Request-Id` repete o identificador.
+- **Números:** valores monetários e alíquotas vão como texto decimal com ponto: `"8.02"` e `"0.18"` (18%). Nunca como número de ponto flutuante. Valores têm até 9 dígitos inteiros; alíquotas são frações menores que 1 (só a MVA pode passar de 1).
+- **Validação:** as mesmas regras do servidor estão no contrato (padrões, `oneOf` por regime, datas reais), e as mensagens de erro saem em português.
+- **Reprodutibilidade:** toda resposta, inclusive de erro, traz `request_id`, `versao_motor` e `versao_regras`, para reproduzir o resultado depois. O cabeçalho `X-Request-Id` repete o identificador.
 - **Itens com erro:** um item com combinação impossível (por exemplo, nota menor que o frete) volta com `situacao: "erro"` e um `problema`. Os outros itens são calculados normalmente.
 - **Dado pendente:** o que depende de dado ainda não publicado (por exemplo, a partilha do DAS) volta como `DADO_PENDENTE`, com o motivo. A API nunca devolve um número inventado.
 
