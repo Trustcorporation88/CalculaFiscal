@@ -89,7 +89,8 @@ describe('linha do tempo com as tabelas oficiais', () => {
     const [a2026] = r.anos;
     expect(a2026?.situacao).toBe('CALCULADO');
     if (a2026?.situacao === 'CALCULADO') expect(a2026.valores.precoComTributo).toBe('8.02');
-    expect(r.simplificado.preco).toBe('11.51');
+    expect(r.simplificado.ok && r.simplificado.resultado.preco).toBe('11.51');
+    expect(r.ajusteNota).toBeNull();
     for (const ano of r.anos) {
       if (ano.situacao === 'CALCULADO')
         expect(Number(ano.valores.precoComTributo)).toBeLessThan(11.51);
@@ -101,6 +102,26 @@ describe('linha do tempo com as tabelas oficiais', () => {
     expect(r.fontes.every((f) => f.norma.length > 0)).toBe(true);
     expect(r.versaoRegras).toMatch(/^[0-9a-f]{12}$/);
     expect(r.memoriaNota.entradas['totalRemontado']).toBe('4.89');
+  });
+
+  it('comparativo impossível não derruba a linha do tempo', () => {
+    const c = calcularLinhaDoTempo(entrada({ ...EXEMPLO_COCA, margem: '70' }), tabelaOficial());
+    expect(c.simplificado).toMatchObject({ ok: false });
+    expect(c.anos[0]?.situacao).toBe('CALCULADO');
+  });
+
+  it('nota abaixo do mínimo possível é recusada, não projetada com outro custo', () => {
+    expect(() =>
+      calcularLinhaDoTempo(
+        entrada({ ...EXEMPLO_COCA, notaCompra: '0,50', freteEDespesas: '1' }),
+        tabelaOficial(),
+      ),
+    ).toThrow(/menor nota possível/);
+  });
+
+  it('valor gigante é recusado na leitura', () => {
+    const r = lerEntrada({ ...EXEMPLO_COCA, notaCompra: '1' + '0'.repeat(40) });
+    expect(!r.ok && r.erros['notaCompra']).toBe('Valor grande demais.');
   });
 
   it('Simples regular sem a partilha do DAS devolve dado pendente, não um número', () => {

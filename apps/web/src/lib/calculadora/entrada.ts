@@ -46,6 +46,9 @@ export function numeroBrasileiro(texto: string): string | null {
   return /^\d+(\.\d+)?$/.test(t) ? t : null;
 }
 
+/** Teto de qualquer valor digitado (R$ 1 bilhão por unidade ou 1 bilhão %). */
+const LIMITE_VALOR = 1_000_000_000;
+
 const NCM = /^\d{4}\.?\d{2}\.?\d{2}$/;
 
 /**
@@ -68,6 +71,7 @@ export function lerEntrada(v: ValoresFormulario): LeituraEntrada {
       return '0';
     }
     if (opcoes.positivo && new D(n).lte(0)) erros[campo] = 'Precisa ser maior que zero.';
+    if (new D(n).gt(LIMITE_VALOR)) erros[campo] = 'Valor grande demais.';
     return new D(n).toFixed();
   };
 

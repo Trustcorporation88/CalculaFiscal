@@ -1,5 +1,6 @@
 import {
   avaliarPreco,
+  D,
   linhaDoTempo,
   precoLiquidoPelaNota,
   precoPsicologico,
@@ -65,7 +66,12 @@ export interface ResultadoCalculadora {
   readonly anos: readonly ResultadoAno[];
   readonly sugestoes: readonly SugestaoAno[];
   readonly cenarios: readonly { readonly cenario: Cenario; readonly anos: readonly ResumoAno[] }[];
-  readonly simplificado: ResultadoSimplificado;
+  /** Indisponível quando o próprio cálculo simplificado é impossível (soma ≥ 100%). */
+  readonly simplificado:
+    | { readonly ok: true; readonly resultado: ResultadoSimplificado }
+    | { readonly ok: false; readonly motivo: string };
+  /** Aviso quando a nota remontada difere 1 centavo da informada (arredondamento). */
+  readonly ajusteNota: string | null;
   readonly fontes: readonly FonteUsada[];
   readonly versaoRegras: string;
   readonly versaoMotor: string;
@@ -177,6 +183,24 @@ function fontesUsadas(tabela: TabelaDeRegras, parametros: readonly ParametrosAno
   return [...fontes.values()];
 }
 
+function simplificadoOuMotivo(e: EntradaCalculadora): ResultadoCalculadora['simplificado'] {
+  try {
+    return {
+      ok: true,
+      resultado: precoSimplificado({
+        custo: e.notaCompra,
+        despesasVariaveis: e.despesasVariaveis,
+        imposto: e.impostoSimplificado,
+        margem: e.margem,
+      }),
+    };
+  } catch (erro) {
+    // O comparativo impossível não pode derrubar a linha do tempo, que é válida.
+    if (erro instanceof RangeError) return { ok: false, motivo: erro.message };
+    throw erro;
+  }
+}
+
 /** Resultado completo da calculadora: cenário escolhido em detalhe e os demais resumidos. */
 export function calcularLinhaDoTempo(
   e: EntradaCalculadora,
@@ -195,12 +219,11 @@ export function calcularLinhaDoTempo(
     anos: principal.anos,
     sugestoes: principal.sugestoes,
     cenarios,
-    simplificado: precoSimplificado({
-      custo: e.notaCompra,
-      despesasVariaveis: e.despesasVariaveis,
-      imposto: e.impostoSimplificado,
-      margem: e.margem,
-    }),
+    simplificado: simplificadoOuMotivo(e),
+    ajusteNota:
+      principal.nota.totalRemontado === new D(e.notaCompra).toFixed(2)
+        ? null
+        : `Nenhum preço do fornecedor fecha a nota em exatamente R$ ${new D(e.notaCompra).toFixed(2)} com essas alíquotas (o arredondamento pula esse centavo). A projeção usa a nota de R$ ${principal.nota.totalRemontado}.`,
     fontes: fontesUsadas(tabela, principal.parametros),
     versaoRegras: tabela.versao,
     versaoMotor: VERSAO_MOTOR,

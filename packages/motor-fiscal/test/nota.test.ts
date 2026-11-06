@@ -43,12 +43,18 @@ describe('preço líquido a partir do total da nota', () => {
     expect(r.totalRemontado).toBe('10.00');
   });
 
-  it('quando nenhum preço fecha a nota no centavo, devolve o mais próximo', () => {
+  it('recusa nota menor que o mínimo possível em vez de projetar outro custo', () => {
     // Frete maior que a nota: nem com preço líquido zero o total cai até ela.
-    const r = precoLiquidoPelaNota({ ...semPreco, freteEDespesas: '1.00' }, '0.50', ANO_2026);
-    expect(r.precoLiquido).toBe('0.000');
-    expect(Number(r.totalRemontado)).toBeGreaterThan(0.5);
-    expect(r.faixa).toEqual({ de: '0.000', ate: '0.000' });
+    expect(() =>
+      precoLiquidoPelaNota({ ...semPreco, freteEDespesas: '1.00' }, '0.50', ANO_2026),
+    ).toThrow(/menor nota possível é R\$ 1\.26/);
+  });
+
+  it('recusa nota acima do teto (a busca fica em inteiros exatos)', () => {
+    expect(() => precoLiquidoPelaNota(semPreco, '1' + '0'.repeat(40), ANO_2026)).toThrow(/limite/);
+    expect(precoLiquidoPelaNota(semPreco, '1000000000', ANO_2026).totalRemontado).toBe(
+      '1000000000.00',
+    );
   });
 
   it('acha o mais próximo quando o arredondamento pula o centavo pedido', () => {

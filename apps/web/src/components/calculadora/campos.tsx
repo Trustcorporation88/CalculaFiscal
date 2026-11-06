@@ -39,7 +39,9 @@ export function CampoNumero({
         {sufixo && <span className="ajuda"> ({sufixo})</span>}
         {!obrigatorio && <span className="ajuda"> opcional</span>}
       </label>
+      {/* key: ao trocar de regime, o React não pode reaproveitar o valor de outro campo. */}
       <input
+        key={nome}
         id={nome}
         name={nome}
         inputMode="decimal"

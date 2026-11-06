@@ -8,7 +8,9 @@ export function Comparador({
   impostoSimplificado,
   anos,
 }: {
-  simplificado: ResultadoSimplificado;
+  simplificado:
+    | { readonly ok: true; readonly resultado: ResultadoSimplificado }
+    | { readonly ok: false; readonly motivo: string };
   impostoSimplificado: string;
   anos: readonly ResultadoAno[];
 }) {
@@ -17,15 +19,21 @@ export function Comparador({
     <div className="comparador">
       <div className="cartao">
         <h3>Cálculo simplificado</h3>
-        <p className="valor-grande numero">{reais(simplificado.preco)}</p>
+        {simplificado.ok ? (
+          <p className="valor-grande numero">{reais(simplificado.resultado.preco)}</p>
+        ) : (
+          <p className="aviso aviso-pendente">Indisponível: {simplificado.motivo}</p>
+        )}
         <p className="ajuda">
           Nota de compra dividida por (1 − despesas − {porcento(impostoSimplificado)} de imposto por
           dentro − margem). Não considera crédito, imposto por fora nem a transição.
         </p>
-        <details>
-          <summary>Memória do cálculo simplificado</summary>
-          <MemoriaCalculo passos={simplificado.memoria} />
-        </details>
+        {simplificado.ok && (
+          <details>
+            <summary>Memória do cálculo simplificado</summary>
+            <MemoriaCalculo passos={simplificado.resultado.memoria} />
+          </details>
+        )}
       </div>
       <div className="cartao">
         <h3>Cálculo correto (cliente paga)</h3>

@@ -174,6 +174,7 @@ function Resultado({ estado }: { estado: Extract<EstadoCalculadora, { situacao: 
         )}
       </p>
 
+      {r.ajusteNota && <p className="aviso aviso-pendente">{r.ajusteNota}</p>}
       <p className="aviso aviso-pendente">{AVISO_REDUCOES}</p>
 
       <h3>Linha do tempo</h3>

@@ -17,6 +17,8 @@ export interface PrecoLiquidoDaNota {
 }
 
 const MILESIMO = new D('0.001');
+/** Teto por unidade: mantém a busca em inteiros exatos na precisão do Decimal (34 dígitos). */
+const NOTA_MAXIMA = new D('1000000000');
 
 /**
  * Na faixa [inicio, fim] (em milésimos), o centavo inteiro mais perto do meio; se ele cair fora
@@ -42,6 +44,9 @@ export function precoLiquidoPelaNota(
 ): PrecoLiquidoDaNota {
   const alvo = dec(totalNota);
   if (alvo.lte(0)) throw new RangeError('O total da nota precisa ser maior que zero.');
+  if (alvo.gt(NOTA_MAXIMA)) {
+    throw new RangeError('O total da nota por unidade passa do limite de R$ 1 bilhão.');
+  }
 
   const total = (milesimos: Dec) =>
     reconstruirCompra({ ...f, precoLiquido: milesimos.times(MILESIMO).toFixed(3) }, p, [])
@@ -73,7 +78,15 @@ export function precoLiquidoPelaNota(
 
   const reaisDe = (m: Dec) => m.times(MILESIMO).toFixed(3);
   const precoLiquido = reaisDe(escolhido);
-  const totalRemontado = total(escolhido).toFixed(2);
+  const remontado = total(escolhido);
+  // Até 1 centavo de diferença é arredondamento (a nota pula aquele centavo); mais que isso, a
+  // nota é menor que o mínimo possível com esses tributos e frete, e projetar seria enganoso.
+  if (remontado.minus(alvo).abs().gt('0.01')) {
+    throw new RangeError(
+      `Com esses tributos e frete, a menor nota possível é R$ ${total(new D(0)).toFixed(2)}; a informada (R$ ${alvo.toFixed(2)}) é menor. Confira os valores.`,
+    );
+  }
+  const totalRemontado = remontado.toFixed(2);
   const faixa = exato
     ? { de: reaisDe(inicio), ate: reaisDe(fim) }
     : { de: precoLiquido, ate: precoLiquido };
