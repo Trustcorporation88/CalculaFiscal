@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
@@ -21,9 +22,13 @@ async function trocarSenha(form: FormData) {
   const { error } = await supabase.auth.updateUser({ password: dados.data.senha });
   if (error) {
     if (error.code === 'weak_password') redirect('/conta/nova-senha?erro=senha_fraca');
+    // Sessão antiga com secure_password_change: repetir o formulário não resolve.
+    // O link de recuperação cria uma sessão nova, que satisfaz a exigência.
+    if (error.code === 'reauthentication_needed') redirect('/recuperar-senha?aviso=reautenticar');
     redirect('/conta/nova-senha?erro=falha');
   }
-  redirect('/app?aviso=senha_alterada');
+  // Confirmação na própria página: /app pode redirecionar (ex.: para criar organização) e perder o aviso.
+  redirect('/conta/nova-senha?aviso=senha_alterada');
 }
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
@@ -32,7 +37,18 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function PaginaNovaSenha({ searchParams }: Props) {
   const { usuario } = await usuarioAtual();
   if (!usuario) redirect('/entrar');
-  const { erro } = await searchParams;
+  const { erro, aviso } = await searchParams;
+  if (aviso === 'senha_alterada') {
+    return (
+      <main className="cartao-auth">
+        <h1>Senha alterada</h1>
+        <Aviso aviso={aviso} />
+        <p>
+          <Link href="/app">Continuar</Link>
+        </p>
+      </main>
+    );
+  }
   return (
     <main className="cartao-auth">
       <h1>Criar nova senha</h1>

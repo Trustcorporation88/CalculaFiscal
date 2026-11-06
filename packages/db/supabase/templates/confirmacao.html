@@ -23,7 +23,7 @@
       <p style="font-size: 16px; line-height: 1.5">Confirme seu e-mail para ativar a conta.</p>
       <p style="margin: 24px 0">
         <a
-          href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=email"
+          href="{{ .RedirectTo }}?token_hash={{ .TokenHash }}&amp;type=email"
           style="
             background: #1f4e79;
             color: #ffffff;
