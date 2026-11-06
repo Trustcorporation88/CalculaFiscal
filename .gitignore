@@ -11,3 +11,4 @@ coverage/
 supabase/.temp/
 packages/db/supabase/.temp/
 packages/db/supabase/.branches/
+*.tsbuildinfo
