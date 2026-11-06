@@ -4,6 +4,8 @@ export const MENSAGENS = {
   dados: 'Confira os dados informados.',
   senha_fraca: 'A senha precisa ter pelo menos 10 caracteres.',
   limite: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.',
+  email_indisponivel:
+    'O envio de e-mails está temporariamente no limite. Nenhum e-mail foi enviado agora. Tente de novo em alguns minutos.',
   falha: 'Não foi possível concluir. Tente de novo em instantes.',
   link_invalido: 'O link expirou ou já foi usado. Peça um novo.',
   codigo: 'Código inválido. Confira o aplicativo autenticador e tente de novo.',

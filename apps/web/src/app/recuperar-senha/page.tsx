@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
+import { cotaDeEmailEsgotada } from '@/lib/auth-erros';
 import { urlDoSite } from '@/lib/env';
 import { supabaseServidor } from '@/lib/supabase/server';
 
@@ -27,7 +28,8 @@ async function pedirLink(form: FormData) {
       }),
     );
   }
-  // Mesma resposta sempre, para não revelar quais e-mails têm conta.
+  if (cotaDeEmailEsgotada(error)) redirect('/recuperar-senha?erro=email_indisponivel');
+  // Nos demais casos, a mesma resposta sempre, para não revelar quais e-mails têm conta.
   redirect('/recuperar-senha?aviso=recuperacao_enviada');
 }
 
