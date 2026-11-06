@@ -19,8 +19,14 @@ export async function exigirSessao(opcoes: { permitirSemMfa?: boolean } = {}) {
   const { supabase, usuario } = await usuarioAtual();
   if (!usuario) redirect('/entrar');
 
-  const { data: nivel } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (nivel?.nextLevel === 'aal2' && nivel.currentLevel !== 'aal2') redirect('/mfa');
+  // Falha fechada: sem nível de garantia confiável, a sessão não é aceita.
+  const { data: nivel, error: erroNivel } =
+    await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (erroNivel || !nivel?.currentLevel) {
+    await supabase.auth.signOut();
+    redirect('/entrar?erro=falha');
+  }
+  if (nivel.nextLevel === 'aal2' && nivel.currentLevel !== 'aal2') redirect('/mfa');
 
   const { data } = await supabase
     .from('memberships')
@@ -29,7 +35,7 @@ export async function exigirSessao(opcoes: { permitirSemMfa?: boolean } = {}) {
   const vinculos = (data ?? []) as unknown as Vinculo[];
 
   const ehAdmin = vinculos.some((v) => PAPEIS_ADMIN.has(v.papel));
-  const temMfa = nivel?.currentLevel === 'aal2';
+  const temMfa = nivel.currentLevel === 'aal2';
   if (ehAdmin && !temMfa && !opcoes.permitirSemMfa)
     redirect('/conta/seguranca?aviso=mfa_obrigatorio');
 

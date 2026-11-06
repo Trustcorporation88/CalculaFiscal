@@ -1,7 +1,7 @@
 -- Onboarding (criar_organizacao) e exigência de AAL2 para ações administrativas.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000c1', 'novo@teste.local'),
@@ -39,10 +39,20 @@ select lives_ok(
 select is((select count(*) from public.audit_log), 1::bigint, 'com MFA (AAL2) a auditoria aparece');
 reset role;
 
+-- Limite de 5 organizações por dono (a trava contra corrida está na função).
+set local role authenticated;
+select public.criar_organizacao('Org ' || n) from generate_series(2, 5) as n;
+select throws_ok($$select public.criar_organizacao('Sexta')$$, '54000', null, 'sexta organização é recusada');
+select ok(
+  (select prosrc like '%pg_advisory_xact_lock%' from pg_proc where proname = 'criar_organizacao'),
+  'criar_organizacao serializa por usuário com trava transacional');
+reset role;
+
 -- O usuário não consegue se passar por outro: a função usa auth.uid().
-select is(
-  (select user_id from public.memberships where papel = 'dono'),
-  '00000000-0000-0000-0000-0000000000c1'::uuid, 'dono gravado é sempre o usuário da sessão');
+select ok(
+  (select bool_and(user_id = '00000000-0000-0000-0000-0000000000c1'::uuid)
+   from public.memberships where papel = 'dono'),
+  'dono gravado é sempre o usuário da sessão');
 
 select * from finish();
 rollback;
