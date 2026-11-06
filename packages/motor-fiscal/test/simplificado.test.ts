@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { arredondarMoeda, D, dec, precoSimplificado, VERSAO_MOTOR } from '../src/index.js';
@@ -12,7 +13,12 @@ describe('caso de aceite: Coca-Cola 600 ml no cálculo simplificado', () => {
     });
     expect(r.preco).toBe('8.02');
     expect(r.memoria).toHaveLength(2);
-    expect(VERSAO_MOTOR).toBe('0.1.0');
+    const pacote = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ) as {
+      version: string;
+    };
+    expect(VERSAO_MOTOR).toBe(pacote.version);
   });
 
   it('reproduz R$ 11,51 (concorrente com 26,5% de IBS+CBS)', () => {

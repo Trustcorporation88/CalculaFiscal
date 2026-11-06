@@ -4,6 +4,8 @@ import { parse } from 'yaml';
 import { ArquivoRegras, type Regra } from './schema.js';
 
 export * from './schema.js';
+export { vigentesEm } from './vigencia.js';
+export * from './resolver.js';
 
 /** Carrega e valida todos os arquivos YAML de um diretório. Falha se houver id@versão duplicado. */
 export function carregarRegras(diretorio: string): Regra[] {
@@ -22,11 +24,4 @@ export function carregarRegras(diretorio: string): Regra[] {
     }
   }
   return regras;
-}
-
-/** Regras vigentes numa data (AAAA-MM-DD), sem aplicar cenário. */
-export function vigentesEm(regras: readonly Regra[], data: string): Regra[] {
-  return regras.filter(
-    (r) => r.vigencia.inicio <= data && (r.vigencia.fim === null || data <= r.vigencia.fim),
-  );
 }
