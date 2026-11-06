@@ -57,6 +57,9 @@ function Bloco({
         <h2 id={`titulo-${id}`}>{titulo}</h2>
         <p className={s.lide}>{resumo}</p>
         <div className={s.textoBloco}>{children}</div>
+        <a href="#topo" className={s.voltar}>
+          ↑ Ver todas as funcionalidades
+        </a>
       </div>
       {naTela && (
         <aside className={s.naTela} aria-label={`Na tela: ${titulo}`}>
@@ -78,7 +81,7 @@ export default function Funcionalidades() {
       <CabecalhoPublico />
 
       <main>
-        <section className={`${s.faixa} ${s.topoPagina}`}>
+        <section id="topo" className={`${s.faixa} ${s.topoPagina}`}>
           <p className={s.sobretitulo}>Funcionalidades</p>
           <h1>Tudo o que a Calculadora Fiscal faz, e como</h1>
           <p className={s.lide}>
