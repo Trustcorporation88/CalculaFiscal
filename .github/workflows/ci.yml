@@ -49,8 +49,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Aplica as migrations num Postgres real
+      - name: Migrations, lint e testes de isolamento entre organizações (pgTAP)
         working-directory: packages/db
         run: |
           supabase db start
           supabase db lint --level error
+          supabase test db
