@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import { cotaDeEmailEsgotada } from '@/lib/auth-erros';
 import { urlDoSite } from '@/lib/env';
 import { supabaseServidor } from '@/lib/supabase/server';
 
@@ -52,6 +53,7 @@ export async function enviarLinkMagico(form: FormData) {
   // Sempre a mesma resposta pública, exista ou não a conta: um 429 só acontece para contas
   // existentes e revelaria o cadastro. Os limites continuam aplicados pelo Supabase Auth.
   if (error) registrarErroAuth('link_magico', error);
+  if (cotaDeEmailEsgotada(error)) redirect('/entrar?erro=email_indisponivel');
   redirect('/entrar?aviso=link_enviado');
 }
 
@@ -69,6 +71,7 @@ export async function cadastrar(form: FormData) {
   });
   if (error) {
     registrarErroAuth('cadastro', error);
+    if (cotaDeEmailEsgotada(error)) redirect('/cadastro?erro=email_indisponivel');
     if (error.status === 429) redirect('/cadastro?erro=limite');
     if (error.code === 'weak_password') redirect('/cadastro?erro=senha_fraca');
     // Falha de servidor, rede ou SMTP: não dizer que o e-mail foi enviado.
