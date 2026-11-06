@@ -1,3 +1,4 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 
 const csp = [
@@ -12,8 +13,6 @@ const csp = [
 ].join('; ');
 
 const config: NextConfig = {
-  // Standalone usa symlinks, que o Windows bloqueia sem modo de desenvolvedor. Railway e CI rodam em Linux.
-  ...(process.platform === 'win32' ? {} : { output: 'standalone' as const }),
   poweredByHeader: false,
   transpilePackages: ['@calculafiscal/motor-fiscal'],
   async headers() {
@@ -36,4 +35,10 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// Eventos do navegador passam por /monitoramento (mesma origem): dispensa liberar o Sentry no CSP
+// e não é bloqueado por bloqueadores de anúncio. Sem SENTRY_AUTH_TOKEN, o upload de source maps é pulado.
+export default withSentryConfig(config, {
+  silent: !process.env['CI'],
+  tunnelRoute: '/monitoramento',
+  telemetry: false,
+});
