@@ -1,0 +1,48 @@
+# Alíquotas de CBS e IBS na transição. Os números de artigo da LC 214 ficam como CONFERIR (alterada pela LC 227/2026).
+regras:
+  - id: cbs.teste-2026
+    versao: 1
+    tributo: CBS
+    descricao: CBS em 2026, ano de teste
+    vigencia: { inicio: '2026-01-01', fim: '2026-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.009' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 125' }
+    status: EM_VIGOR
+    conferencia: CONFERIR
+
+  - id: cbs.2027
+    versao: 1
+    tributo: CBS
+    descricao: CBS em 2027 = referência do TCU (11,3%) menos 0,1 p.p.
+    vigencia: { inicio: '2027-01-01', fim: '2027-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.112' }
+    fonte:
+      norma: 'LC 214/2025; Acórdão TCU de 28/10/2026 (TC 006.529/2026-7)'
+      artigo: 'art. 18, I; redução de 0,1 p.p. a localizar'
+    status: PENDENTE
+    conferencia: CONFERIR
+    observacao: 'Aguarda resolução do Senado (prazo 15/12 ou 22/12/2026, fontes divergem). Sem resolução, vale o TCU.'
+
+  - id: ibs-uf.2027-2028
+    versao: 1
+    tributo: IBS_UF
+    descricao: IBS estadual em 2027 e 2028
+    vigencia: { inicio: '2027-01-01', fim: '2028-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.0005' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 127' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+
+  - id: ibs-mun.2027-2028
+    versao: 1
+    tributo: IBS_MUN
+    descricao: IBS municipal em 2027 e 2028
+    vigencia: { inicio: '2027-01-01', fim: '2028-12-31' }
+    abrangencia: {}
+    valor: { aliquota: '0.0005' }
+    fonte: { norma: 'EC 132/2023', artigo: 'ADCT art. 127' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR

@@ -1,0 +1,11 @@
+{
+  "name": "@calculafiscal/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:start": "supabase start --workdir .",
+    "db:reset": "supabase db reset --workdir .",
+    "db:push:staging": "supabase db push --workdir . --linked"
+  }
+}

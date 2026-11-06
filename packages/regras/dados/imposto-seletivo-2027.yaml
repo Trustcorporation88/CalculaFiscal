@@ -1,0 +1,41 @@
+# MP 1.399/2026, Anexo IV. Conferido no texto publicado (LegisWeb) em 06/11/2026.
+# Efeitos a partir de 02/02/2027 (art. 19). Regime transitório até 31/12/2027 (art. 6).
+regras:
+  - id: is.bebidas-acucaradas
+    versao: 1
+    tributo: IS
+    descricao: Bebidas açucaradas
+    vigencia: { inicio: '2027-02-02', fim: '2027-12-31' }
+    abrangencia: { ncm: ['2202.10.00'], elo: [PRODUCAO, IMPORTACAO] }
+    valor: { aliquotaInicial: '0.026', fatorConversao: '1.00', aliquota: '0.026' }
+    fonte: { norma: 'MP 1.399/2026', artigo: 'art. 3, caput; Anexo IV' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: OK
+
+  - id: is.cervejas
+    versao: 1
+    tributo: IS
+    descricao: Cervejas de malte
+    vigencia: { inicio: '2027-02-02', fim: '2027-12-31' }
+    abrangencia: { ncm: ['22.03'], elo: [PRODUCAO, IMPORTACAO] }
+    valor: { aliquotaInicial: '0.039', fatorConversao: '1.07', aliquota: '0.042' }
+    fonte: { norma: 'MP 1.399/2026', artigo: 'art. 3, caput; Anexo IV' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: OK
+    observacao: '3,9 x 1,07 = 4,173; o Anexo IV publica 4,2'
+
+  - id: is.cigarros
+    versao: 1
+    tributo: IS
+    descricao: Cigarros e cigarrilhas
+    vigencia: { inicio: '2027-02-02', fim: '2027-12-31' }
+    abrangencia: { ncm: ['24.02'], elo: [PRODUCAO, IMPORTACAO] }
+    valor:
+      aliquotaInicial: '0.667'
+      fatorConversao: '1.00'
+      aliquota: '0.667'
+      especifica: { valor: '3.50', unidade: 'vintena (a confirmar)' }
+    fonte: { norma: 'MP 1.399/2026', artigo: 'art. 3, §1º, II; Anexo IV' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Unidade da parcela específica não está explícita no Anexo IV'
