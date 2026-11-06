@@ -1,0 +1,132 @@
+:root {
+  --cor-tinta: #14213d;
+  --cor-papel: #fbfaf7;
+  --cor-primaria: #1f4e79;
+  --cor-acento: #c28a2c;
+  --cor-borda: #d6d3cc;
+  --cor-erro: #b42318;
+  --cor-ok: #1e7a4c;
+  --raio: 6px;
+  --fonte: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cor-tinta: #e8ecf4;
+    --cor-papel: #0e1524;
+    --cor-primaria: #7fb0e0;
+    --cor-borda: #2c3a52;
+    --cor-erro: #f97066;
+    --cor-ok: #5cc48e;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fonte);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--cor-tinta);
+  background: var(--cor-papel);
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--cor-primaria);
+}
+
+:focus-visible {
+  outline: 3px solid var(--cor-acento);
+  outline-offset: 2px;
+}
+
+.conteudo {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.cartao-auth {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 24px 16px;
+}
+
+.formulario {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 24px;
+}
+
+input {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio);
+  background: transparent;
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  padding: 10px 16px;
+  border-radius: var(--raio);
+  border: 1px solid var(--cor-primaria);
+  background: var(--cor-primaria);
+  color: var(--cor-papel);
+  cursor: pointer;
+}
+
+button.secundario {
+  background: transparent;
+  color: var(--cor-primaria);
+}
+
+button.link {
+  border: none;
+  background: none;
+  color: var(--cor-primaria);
+  padding: 0;
+  text-decoration: underline;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.ajuda {
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.aviso {
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  border: 1px solid currentColor;
+}
+
+.aviso-erro {
+  color: var(--cor-erro);
+}
+
+.aviso-ok {
+  color: var(--cor-ok);
+}
+
+code {
+  word-break: break-all;
+}

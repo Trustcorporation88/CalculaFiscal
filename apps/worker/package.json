@@ -11,7 +11,8 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@calculafiscal/motor-fiscal": "workspace:*"
+    "@calculafiscal/motor-fiscal": "workspace:*",
+    "@sentry/node": "^11.11.0"
   },
   "devDependencies": {
     "vitest": "^3.0.0"
