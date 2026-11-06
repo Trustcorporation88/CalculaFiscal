@@ -34,9 +34,13 @@ export default async function Painel({ searchParams }: Props) {
         ))}
       </ul>
       <p>
+        <Link href="/app/calculadora" className="botao">
+          Abrir a calculadora de preço
+        </Link>
+      </p>
+      <p>
         <Link href="/conta/seguranca">Segurança da conta</Link>
       </p>
-      <p className="ajuda">A calculadora entra na fase do motor da Onda 1.</p>
     </main>
   );
 }

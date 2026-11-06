@@ -12,3 +12,5 @@ supabase/.temp/
 packages/db/supabase/.temp/
 packages/db/supabase/.branches/
 *.tsbuildinfo
+packages/regras/src/pacote.gerado.ts
+packages/regras/src/*.tmp

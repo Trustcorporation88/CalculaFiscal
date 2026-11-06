@@ -5,3 +5,4 @@ coverage
 docs/fase-0
 prompt-site-precificacao-reforma.md
 apps/web/next-env.d.ts
+packages/regras/src/pacote.gerado.ts

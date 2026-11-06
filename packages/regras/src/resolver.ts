@@ -2,8 +2,9 @@ import { D, dec, type ParametrosAno, type ReferenciaRegra } from '@calculafiscal
 import type { Regra } from './schema.js';
 import { vigentesEm } from './vigencia.js';
 
-export const CENARIOS = ['base', 'ibs-baixo', 'ibs-alto', 'mp-caducada'] as const;
-export type Cenario = (typeof CENARIOS)[number];
+import { type Cenario } from './cenarios.js';
+
+export { CENARIOS, DESCRICAO_CENARIOS, type Cenario } from './cenarios.js';
 
 export interface PedidoAno {
   readonly ano: number;

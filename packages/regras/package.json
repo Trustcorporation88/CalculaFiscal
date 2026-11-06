@@ -9,12 +9,21 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./cenarios": {
+      "types": "./dist/cenarios.d.ts",
+      "default": "./dist/cenarios.js"
+    },
+    "./tabela": {
+      "types": "./dist/tabela.d.ts",
+      "default": "./dist/tabela.js"
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "gerar": "node scripts/gerar-pacote.mjs",
+    "build": "node scripts/gerar-pacote.mjs && tsc -p tsconfig.build.json",
+    "typecheck": "node scripts/gerar-pacote.mjs && tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/gerar-pacote.mjs && vitest run"
   },
   "dependencies": {
     "yaml": "^2.6.0",
