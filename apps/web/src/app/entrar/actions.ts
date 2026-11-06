@@ -74,6 +74,8 @@ export async function cadastrar(form: FormData) {
     if (cotaDeEmailEsgotada(error)) redirect('/cadastro?erro=email_indisponivel');
     if (error.status === 429) redirect('/cadastro?erro=limite');
     if (error.code === 'weak_password') redirect('/cadastro?erro=senha_fraca');
+    // Só ocorre sem confirmação por e-mail (staging); com confirmação o Supabase já não revela isso.
+    if (error.code === 'user_already_exists') redirect('/entrar?erro=conta_existente');
     // Falha de servidor, rede ou SMTP: não dizer que o e-mail foi enviado.
     redirect('/cadastro?erro=falha');
   }

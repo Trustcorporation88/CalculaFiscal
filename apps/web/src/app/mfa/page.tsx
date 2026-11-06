@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
 import { sair } from '../entrar/actions';
 import { usuarioAtual, supabaseServidor } from '@/lib/supabase/server';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Verificação em duas etapas | CalculaFiscal' };
 
@@ -49,12 +50,10 @@ export default async function Mfa({ searchParams }: Props) {
           required
           autoFocus
         />
-        <button type="submit">Verificar</button>
+        <BotaoEnviar>Verificar</BotaoEnviar>
       </form>
       <form action={sair}>
-        <button type="submit" className="link">
-          Sair
-        </button>
+        <BotaoEnviar className="link">Sair</BotaoEnviar>
       </form>
     </main>
   );

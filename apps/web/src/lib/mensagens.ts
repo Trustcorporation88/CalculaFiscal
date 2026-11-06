@@ -17,6 +17,7 @@ export const MENSAGENS = {
   recuperacao_enviada:
     'Se houver uma conta com este e-mail, enviamos um link para criar uma nova senha.',
   senha_alterada: 'Senha alterada. Use a nova senha no próximo acesso.',
+  conta_existente: 'Este e-mail já tem conta. Entre com a sua senha ou use "Esqueci a senha".',
   senhas_diferentes: 'As duas senhas não são iguais.',
   reautenticar: 'Por segurança, confirme que é você: peça um link de troca de senha pelo e-mail.',
 } as const;

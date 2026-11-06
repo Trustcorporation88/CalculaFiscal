@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
 import { exigirSessao } from '@/lib/sessao';
 import { supabaseServidor } from '@/lib/supabase/server';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Nova organização | CalculaFiscal' };
 
@@ -31,7 +32,7 @@ export default async function NovaOrganizacao({ searchParams }: Props) {
       <form action={criar} className="formulario">
         <label htmlFor="nome">Nome da organização</label>
         <input id="nome" name="nome" minLength={2} maxLength={200} required />
-        <button type="submit">Criar</button>
+        <BotaoEnviar>Criar</BotaoEnviar>
       </form>
     </main>
   );
