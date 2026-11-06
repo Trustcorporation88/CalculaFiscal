@@ -96,6 +96,9 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
   const fator = dec(p.fatorIcms);
   const das = simples ? dec(perfil.aliquotaDas as string) : ZERO;
   const parcela = perfil.parcelaCbsIbsNoDas === null ? null : dec(perfil.parcelaCbsIbsNoDas);
+  if (parcela !== null && (parcela.isNegative() || parcela.gt(UM))) {
+    throw new RangeError('A parcela de CBS/IBS no DAS é uma fração entre 0 e 1.');
+  }
   const aIcms = simples ? ZERO : dec(perfil.aliquotaIcmsSaida).times(fator);
   const aPc = !simples && p.pisCofinsVigente ? dec(perfil.aliquotaPisCofinsSaida) : ZERO;
   const aDas = regularNoSimples ? das.times(UM.minus(parcela as Dec)) : das;
@@ -124,7 +127,12 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
   const ibs = porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.ibs)));
   const despesas = arredondarMoeda(preco.times(desp));
   const tributosDentro = icms.plus(pisCofins).plus(valorDas);
-  const lucro = preco.minus(tributosDentro).minus(despesas).minus(custo);
+  const receitaLiquida = preco.minus(tributosDentro);
+  // Preço com tributo ≥ preço > receita líquida: basta checar a menor das bases das margens.
+  if (receitaLiquida.lte(0)) {
+    throw new RangeError('Custo e preço zerados: não há margem a calcular.');
+  }
+  const lucro = receitaLiquida.minus(despesas).minus(custo);
   const precoComTributo = preco.plus(cbs).plus(ibs);
 
   let creditoTransferido: string | null;
@@ -215,7 +223,7 @@ export function precificarAno(e: EntradaPrecificacao, p: ParametrosAno): Resulta
       despesas: despesas.toFixed(2),
       lucro: lucro.toFixed(2),
       margemSobrePrecoComTributo: pct(lucro.div(precoComTributo)),
-      margemSobreReceitaLiquida: pct(lucro.div(preco.minus(tributosDentro))),
+      margemSobreReceitaLiquida: pct(lucro.div(receitaLiquida)),
     },
     memoria,
   };

@@ -45,6 +45,8 @@ function regraIs(vigentes: Regra[], ncm: string, cenario: Cenario): Regra | unde
   const alvo = soDigitos(ncm);
   const casam = vigentes
     .filter((r) => r.tributo === 'IS')
+    // Só as regras aplicáveis ao cenário entram na disputa pelo prefixo mais longo.
+    .filter((r) => r.cenarios.length === 0 || r.cenarios.includes(cenario))
     .map((r) => ({
       r,
       tam: Math.max(
@@ -73,6 +75,9 @@ function regraIs(vigentes: Regra[], ncm: string, cenario: Cenario): Regra | unde
 export function resolverAno(regras: readonly Regra[], pedido: PedidoAno): ParametrosAno {
   const cenario = pedido.cenario ?? 'base';
   const data = pedido.data ?? `${pedido.ano}-07-01`;
+  if (!data.startsWith(`${pedido.ano}-`)) {
+    throw new RangeError(`A data ${data} está fora do ano pedido (${pedido.ano}).`);
+  }
   const vigentes = vigentesEm(regras, data);
   const porId = (id: string) =>
     exigir(

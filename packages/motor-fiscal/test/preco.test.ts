@@ -162,6 +162,17 @@ describe('outros perfis e validações', () => {
     expect(reconstruirCompra(f, ANO_2026, []).icmsSt.isZero()).toBe(true);
   });
 
+  it('sujeição à ST bloqueia o crédito do ICMS próprio mesmo com ST recolhida zero', () => {
+    const f: Fornecimento = {
+      ...COCA_FABRICANTE,
+      substituicaoTributaria: { mva: '0', aliquotaInterna: '0.07' },
+    };
+    const c = reconstruirCompra(f, ANO_2026, []);
+    expect(c.sujeitaSt).toBe(true);
+    expect(c.icmsProprio.gt(0)).toBe(true);
+    expect(apurarCreditos(c, varejo, ANO_2026, []).icms.isZero()).toBe(true);
+  });
+
   it('rejeita entradas impossíveis', () => {
     expect(() =>
       precificarAno(
@@ -182,6 +193,34 @@ describe('outros perfis e validações', () => {
         [],
       ),
     ).toThrow(RangeError);
+    expect(() =>
+      reconstruirCompra({ ...COCA_FABRICANTE, precoLiquido: '-1' }, ANO_2026, []),
+    ).toThrow(/negativo/);
+    expect(() =>
+      reconstruirCompra({ ...COCA_FABRICANTE, freteEDespesas: '-0.10' }, ANO_2026, []),
+    ).toThrow(/negativos/);
+    for (const parcela of ['-0.1', '1.2']) {
+      for (const regime of ['SIMPLES_DAS', 'SIMPLES_REGULAR'] as const) {
+        expect(() =>
+          precificarAno(
+            {
+              fornecimento: COCA_FABRICANTE,
+              perfil: { ...DISTRIBUIDORA_SIMPLES, regime, parcelaCbsIbsNoDas: parcela },
+            },
+            ANO_2027,
+          ),
+        ).toThrow(/entre 0 e 1/);
+      }
+    }
+    expect(() =>
+      precificarAno(
+        {
+          fornecimento: { ...COCA_FABRICANTE, precoLiquido: '0', freteEDespesas: '0' },
+          perfil: DISTRIBUIDORA_REAL,
+        },
+        ANO_2026,
+      ),
+    ).toThrow(/não há margem/);
   });
 
   it('status do ano é o menos firme entre as regras usadas', () => {

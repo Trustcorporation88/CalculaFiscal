@@ -60,6 +60,30 @@ describe('resolverAno', () => {
     expect(resolverAno(regras, { ano: 2027, ncm: '2203.00.00' }).aliquotaIs).toBe('0.042');
   });
 
+  it('regra de IS de outro cenário não esconde a regra base de prefixo mais curto', () => {
+    const cerveja = regras.find(
+      (r) => r.tributo === 'IS' && r.abrangencia.ncm.some((n) => n.startsWith('22.03')),
+    ) as Regra;
+    const soNoAlto: Regra = {
+      ...cerveja,
+      id: 'is.cerveja-especifica',
+      abrangencia: { ...cerveja.abrangencia, ncm: ['2203.00.00'] },
+      cenarios: ['ibs-alto'],
+      valor: { ...cerveja.valor, aliquota: '0.05' },
+    };
+    const comExtra = [...regras, soNoAlto];
+    expect(resolverAno(comExtra, { ano: 2027, ncm: '2203.00.00' }).aliquotaIs).toBe(
+      cerveja.valor.aliquota,
+    );
+    expect(
+      resolverAno(comExtra, { ano: 2027, ncm: '2203.00.00', cenario: 'ibs-alto' }).aliquotaIs,
+    ).toBe('0.05');
+  });
+
+  it('rejeita data fora do ano pedido', () => {
+    expect(() => resolverAno(regras, { ano: 2026, data: '2033-07-01' })).toThrow(/fora do ano/);
+  });
+
   it('transição do ICMS: 90% em 2029 até zero em 2033', () => {
     const fatores = resolverPeriodo(regras, { ncm: COCA }).map((p) => p.fatorIcms);
     expect(fatores).toEqual(['1', '1', '1', '0.9', '0.8', '0.7', '0.6', '0']);

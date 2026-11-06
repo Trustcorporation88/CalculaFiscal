@@ -8,6 +8,8 @@ export interface Compra {
   readonly pisCofins: Dec;
   readonly ipi: Dec;
   readonly icmsSt: Dec;
+  /** Fornecimento sujeito à ST, mesmo quando o ICMS-ST recolhido é zero. */
+  readonly sujeitaSt: boolean;
   readonly is: Dec;
   readonly cbs: Dec;
   readonly ibs: Dec;
@@ -37,6 +39,11 @@ export function reconstruirCompra(
   memoria: PassoMemoria[],
 ): Compra {
   const liquido = dec(f.precoLiquido);
+  if (liquido.isNegative())
+    throw new RangeError('O preço líquido do fornecedor não pode ser negativo.');
+  if (dec(f.freteEDespesas).isNegative()) {
+    throw new RangeError('Frete e despesas da compra não podem ser negativos.');
+  }
   const fator = dec(p.fatorIcms);
   const aIcms = dec(f.aliquotaIcms).times(fator);
   const aPc = p.pisCofinsVigente ? dec(f.aliquotaPisCofins) : ZERO;
@@ -117,7 +124,19 @@ export function reconstruirCompra(
     },
   );
 
-  return { precoFornecedor, icmsProprio, pisCofins, ipi, icmsSt, is, cbs, ibs, frete, totalNota };
+  return {
+    precoFornecedor,
+    icmsProprio,
+    pisCofins,
+    ipi,
+    icmsSt,
+    sujeitaSt: f.substituicaoTributaria !== null,
+    is,
+    cbs,
+    ibs,
+    frete,
+    totalNota,
+  };
 }
 
 /**
@@ -130,7 +149,8 @@ export function apurarCreditos(
   p: ParametrosAno,
   memoria: PassoMemoria[],
 ): Creditos {
-  const icms = perfil.creditaIcmsEntrada && c.icmsSt.isZero() ? c.icmsProprio : ZERO;
+  // Sujeição à ST bloqueia o crédito do ICMS próprio, mesmo quando a ST recolhida é zero.
+  const icms = perfil.creditaIcmsEntrada && !c.sujeitaSt ? c.icmsProprio : ZERO;
   const pisCofins = p.pisCofinsVigente
     ? arredondarMoeda(c.precoFornecedor.times(dec(perfil.creditoPisCofinsEntrada)))
     : ZERO;
