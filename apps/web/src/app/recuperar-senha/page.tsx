@@ -6,6 +6,7 @@ import { Aviso } from '@/components/aviso';
 import { cotaDeEmailEsgotada } from '@/lib/auth-erros';
 import { urlDoSite } from '@/lib/env';
 import { supabaseServidor } from '@/lib/supabase/server';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Recuperar senha | CalculaFiscal' };
 
@@ -45,7 +46,7 @@ export default async function RecuperarSenha({ searchParams }: Props) {
       <form action={pedirLink} className="formulario">
         <label htmlFor="email">E-mail</label>
         <input id="email" name="email" type="email" autoComplete="email" required />
-        <button type="submit">Enviar link</button>
+        <BotaoEnviar>Enviar link</BotaoEnviar>
       </form>
       <p>
         <Link href="/entrar">Voltar para entrar</Link>

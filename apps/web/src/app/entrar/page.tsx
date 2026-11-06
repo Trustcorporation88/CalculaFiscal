@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Aviso } from '@/components/aviso';
 import { entrarComSenha, enviarLinkMagico } from './actions';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Entrar | CalculaFiscal' };
 
@@ -19,7 +20,7 @@ export default async function Entrar({ searchParams }: Props) {
         <input id="email" name="email" type="email" autoComplete="email" required />
         <label htmlFor="senha">Senha</label>
         <input id="senha" name="senha" type="password" autoComplete="current-password" required />
-        <button type="submit">Entrar</button>
+        <BotaoEnviar>Entrar</BotaoEnviar>
       </form>
       <p>
         <Link href="/recuperar-senha">Esqueci a senha</Link>
@@ -29,9 +30,7 @@ export default async function Entrar({ searchParams }: Props) {
       <form action={enviarLinkMagico} className="formulario">
         <label htmlFor="email-link">E-mail</label>
         <input id="email-link" name="email" type="email" autoComplete="email" required />
-        <button type="submit" className="secundario">
-          Enviar link
-        </button>
+        <BotaoEnviar className="secundario">Enviar link</BotaoEnviar>
       </form>
 
       <p>

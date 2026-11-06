@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Aviso } from '@/components/aviso';
 import { sair } from '../entrar/actions';
 import { exigirSessao } from '@/lib/sessao';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Painel | CalculaFiscal' };
 
@@ -19,9 +20,7 @@ export default async function Painel({ searchParams }: Props) {
       <header className="topo">
         <h1>Painel</h1>
         <form action={sair}>
-          <button type="submit" className="secundario">
-            Sair
-          </button>
+          <BotaoEnviar className="secundario">Sair</BotaoEnviar>
         </form>
       </header>
       <Aviso aviso={aviso} />

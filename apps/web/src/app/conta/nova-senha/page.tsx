@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { Aviso } from '@/components/aviso';
 import { supabaseServidor, usuarioAtual } from '@/lib/supabase/server';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Nova senha | CalculaFiscal' };
 
@@ -76,7 +77,7 @@ export default async function PaginaNovaSenha({ searchParams }: Props) {
           minLength={10}
           required
         />
-        <button type="submit">Salvar nova senha</button>
+        <BotaoEnviar>Salvar nova senha</BotaoEnviar>
       </form>
     </main>
   );

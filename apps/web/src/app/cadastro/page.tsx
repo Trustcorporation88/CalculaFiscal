@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Aviso } from '@/components/aviso';
 import { cadastrar } from '../entrar/actions';
+import { BotaoEnviar } from '@/components/botao-enviar';
 
 export const metadata: Metadata = { title: 'Criar conta | CalculaFiscal' };
 
@@ -29,7 +30,7 @@ export default async function Cadastro({ searchParams }: Props) {
         <p id="senha-ajuda" className="ajuda">
           Pelo menos 10 caracteres.
         </p>
-        <button type="submit">Criar conta</button>
+        <BotaoEnviar>Criar conta</BotaoEnviar>
       </form>
       <p>
         Já tem conta? <Link href="/entrar">Entrar</Link>
