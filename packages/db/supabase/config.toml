@@ -429,6 +429,11 @@ project_id = "ebfawpisbfkstpcstswl"
 site_url = "https://web-staging-50d4.up.railway.app"
 additional_redirect_urls = ["https://web-staging-50d4.up.railway.app/auth/callback", "http://localhost:3000/auth/callback"]
 
+# TEMPORÁRIO (06/11/2026): sem confirmação por e-mail no staging enquanto o SMTP padrão do
+# Supabase (2 e-mails/hora) bloqueia os testes. Religar ao configurar o SMTP próprio (Resend).
+[remotes.staging.auth.email]
+enable_confirmations = false
+
 # Modelos de e-mail com token_hash: o link funciona mesmo aberto em outro aparelho ou navegador
 # (o fluxo PKCE padrão exige o mesmo navegador em que o cadastro foi feito).
 [auth.email.template.confirmation]

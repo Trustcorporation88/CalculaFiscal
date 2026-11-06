@@ -64,7 +64,7 @@ export async function cadastrar(form: FormData) {
     redirect(`/cadastro?erro=${senhaCurta ? 'senha_fraca' : 'dados'}`);
   }
   const supabase = await supabaseServidor();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: dados.data.email,
     password: dados.data.senha,
     options: { emailRedirectTo: `${urlDoSite()}/auth/callback` },
@@ -77,6 +77,8 @@ export async function cadastrar(form: FormData) {
     // Falha de servidor, rede ou SMTP: não dizer que o e-mail foi enviado.
     redirect('/cadastro?erro=falha');
   }
+  // Sem confirmação por e-mail (ex.: staging), o Supabase já devolve a sessão.
+  if (data.session) redirect('/app');
   redirect('/entrar?aviso=cadastro_enviado');
 }
 
