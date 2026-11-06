@@ -1,0 +1,208 @@
+# Tratamentos de CBS/IBS por classificação tributária (cClassTrib) para mercadorias.
+# Fonte dos percentuais: Calculadora de Tributos da RFB, dados abertos,
+# GET /calculadora/dados-abertos/classificacoes-tributarias/cbs-ibs?data=2027-07-01,
+# base V0066 de 28/10/2026, consultada em 06/11/2026 (cópia em fontes/rfb-cclasstrib-V0066.json).
+# Só os tratamentos que dependem do produto; os condicionados ao comprador (administração
+# pública, produtor rural, ZFM, emergência de saúde) ficam fora até haver campo para isso.
+# Os números de artigo da LC 214 estão como CONFERIR. Efeito econômico a partir de 2027.
+regras:
+  - id: reducao.cclasstrib-200003
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200003: Vendas de produtos destinados à alimentação humana (Anexo I)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200003'] }
+    valor: { aliquota: '1' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 125; Anexo I; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200014
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200014: Fornecimento dos produtos hortícolas, frutas e ovos (Anexo XV)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200014'] }
+    valor: { aliquota: '1' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 148; Anexo XV; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200013
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200013: Fornecimento de tampões higiênicos, absorventes higiênicos internos ou externos'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200013'] }
+    valor: { aliquota: '1' }
+    fonte:
+      {
+        norma: 'LC 214/2025',
+        artigo: 'art. 147; sem anexo (absorventes e tampões); tabela cClassTrib RFB V0066',
+      }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200004
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200004: Fornecimento de dispositivos médicos (Anexo XII)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200004'] }
+    valor: { aliquota: '1' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 144; Anexo XII; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200007
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200007: Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo XIII)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200007'] }
+    valor: { aliquota: '1' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 145; Anexo XIII; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200009
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200009: Fornecimento dos medicamentos registrados na Anvisa'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200009'] }
+    valor: { aliquota: '1' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 146; Anexo XIV; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200053
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200053: Fornecimento de medicamentos registrados na Anvisa, quando  classificados como soros ou vacinas'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200053'] }
+    valor: { aliquota: '1' }
+    fonte:
+      {
+        norma: 'LC 214/2025',
+        artigo: 'art. 146; Anexo XIV (soros e vacinas); tabela cClassTrib RFB V0066',
+      }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota zero. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200030
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200030: Venda dos dispositivos médicos (Anexo IV)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200030'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 131; Anexo IV; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200031
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200031: Fornecimento dos dispositivos de acessibilidade próprios para pessoas com deficiência (Anexo V)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200031'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 132; Anexo V; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200032
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200032: Fornecimento dos medicamentos registrados na Anvisa ou produzidos por farmácias de manipulação, ressalvados os medicamentos sujeitos à alíquota zero'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200032'] }
+    valor: { aliquota: '0.6' }
+    fonte:
+      { norma: 'LC 214/2025', artigo: 'art. 133; registro na Anvisa; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200033
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200033: Fornecimento das composições para nutrição enteral e parenteral (Anexo VI)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200033'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 134; Anexo VI; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200034
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200034: Fornecimento dos alimentos destinados ao consumo humano (Anexo VII)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200034'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 135; Anexo VII; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200035
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200035: Fornecimento dos produtos de higiene pessoal e limpeza (Anexo VIII)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200035'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 136; Anexo VIII; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200036
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200036: Fornecimento de produtos agropecuários, aquícolas, pesqueiros, florestais e extrativistas vegetais in natura'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200036'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 137; in natura; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200038
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200038: Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200038'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 138; Anexo IX; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'
+
+  - id: reducao.cclasstrib-200039
+    versao: 1
+    tributo: REDUCAO_CBS_IBS
+    descricao: '200039: Fornecimento dos bens e serviços relacionados com produções nacionais artísticas, culturais, de eventos, jornalísticas e audiovisuais (Anexo X)'
+    vigencia: { inicio: '2027-01-01', fim: null }
+    abrangencia: { cClassTrib: ['200039'] }
+    valor: { aliquota: '0.6' }
+    fonte: { norma: 'LC 214/2025', artigo: 'art. 139; Anexo X; tabela cClassTrib RFB V0066' }
+    status: PUBLICADO_EFEITO_FUTURO
+    conferencia: CONFERIR
+    observacao: 'Alíquota reduzida em 60%. Confirme que o NCM do produto consta no anexo; o número do artigo ainda será conferido no texto consolidado.'

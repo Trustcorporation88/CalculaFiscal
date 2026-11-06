@@ -99,8 +99,8 @@ describe('exportação para Excel', () => {
 
   it('modelo do lote tem cabeçalho e linha de exemplo em texto', () => {
     const [produtos] = abasDoModeloLote();
-    expect(produtos?.data[0]).toHaveLength(9);
-    expect(produtos?.data[1]?.[2]).toMatchObject({ value: '4,89', format: '@' });
+    expect(produtos?.data[0]).toHaveLength(10);
+    expect(produtos?.data[1]?.[3]).toMatchObject({ value: '4,89', format: '@' });
   });
 });
 

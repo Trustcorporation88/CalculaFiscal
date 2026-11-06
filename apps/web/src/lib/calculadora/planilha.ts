@@ -3,7 +3,7 @@ import type { Status } from '@calculafiscal/motor-fiscal';
 import type { Cell, Row, SheetData } from 'write-excel-file/browser';
 import type { LinhaLote, ResultadoCalculadora } from './calcular';
 import { CABECALHO_LOTE, COLUNAS_LOTE } from './lote';
-import { AVISO_REDUCOES } from './avisos';
+import { AVISO_LOTE, avisoTratamento } from './avisos';
 import type { EntradaCalculadora } from './entrada';
 import { ROTULO_BASE_MARGEM, ROTULO_CAMPO, ROTULO_REGIME } from './rotulos';
 
@@ -47,6 +47,7 @@ export function linhasDaEntrada(e: EntradaCalculadora): [string, string][] {
   const linhas: [string, string][] = [
     [r('descricao'), e.descricao || '(sem descrição)'],
     [r('ncm'), e.ncm ?? '(não informado)'],
+    [r('cClassTrib'), e.cClassTrib === '000001' ? '000001 (tributação integral)' : e.cClassTrib],
     [r('cenario'), DESCRICAO_CENARIOS[e.cenario]],
     [r('notaCompra'), reaisTexto(e.notaCompra)],
     [r('aliquotaIcms'), pctTexto(e.aliquotaIcms)],
@@ -103,7 +104,7 @@ export function abasDoResultado(r: ResultadoCalculadora, geradoEm: Date): Aba[] 
       `O fornecedor mantém o preço líquido de R$ ${r.precoLiquidoFornecedor} (faixa que fecha a mesma nota: ${r.faixaPrecoLiquido.de} a ${r.faixaPrecoLiquido.ate}).`,
     ],
     ...(r.ajusteNota ? [[r.ajusteNota]] : []),
-    [AVISO_REDUCOES],
+    [avisoTratamento(r.tratamento)],
     ['Simulação para apoio à decisão; não substitui a análise do contador responsável.'],
   ];
 
@@ -272,11 +273,17 @@ const entradasTexto = (e: Readonly<Record<string, string>>) =>
 /** Modelo para preencher: percentuais como números inteiros (18 = 18%), células em texto. */
 export function abasDoModeloLote(): Aba[] {
   const texto = (value: string): Cell => ({ value, type: String, format: '@' });
-  const exemplo = ['Coca-Cola 600 ml', '2202.10.00', '4,89', '18', '2,6', '13', '42', '18', '0'];
+  const exemplos = [
+    ['Coca-Cola 600 ml', '2202.10.00', '000001', '4,89', '18', '2,6', '13', '42', '18', '0'],
+    ['Arroz 5 kg (cesta básica)', '1006.30.21', '200003', '22,50', '7', '0', '0', '', '', '0'],
+  ];
   return [
     {
       sheet: 'Produtos',
-      data: [COLUNAS_LOTE.map((c) => titulo(CABECALHO_LOTE[c])), exemplo.map(texto)],
+      data: [
+        COLUNAS_LOTE.map((c) => titulo(CABECALHO_LOTE[c])),
+        ...exemplos.map((linha) => linha.map(texto)),
+      ],
       columns: COLUNAS_LOTE.map(() => ({ width: 24 })),
       stickyRowsCount: 1,
     },
@@ -286,8 +293,11 @@ export function abasDoModeloLote(): Aba[] {
         [titulo('Uma linha por produto. Valores da nota de compra de hoje (2026), por unidade.')],
         ['Percentuais em número: 18 para 18%, 2,6 para 2,6%. Não formate a célula como %.'],
         ['MVA vazia = compra sem ICMS-ST. NCM é opcional, mas necessário para o Imposto Seletivo.'],
+        [
+          'cClassTrib: tratamento de CBS e IBS (ex.: 200003 cesta básica, 200034 alimentos do Anexo VII). Vazio = tributação integral.',
+        ],
         ['Regime, despesas, margem e cenário são escolhidos na tela, iguais para todo o lote.'],
-        [`Até 500 produtos por arquivo. A linha de exemplo pode ser apagada.`],
+        [`Até 500 produtos por arquivo. As linhas de exemplo podem ser apagadas.`],
       ],
       columns: [{ width: 100 }],
     },
@@ -353,7 +363,7 @@ export function abasDoLote(
         ['Cenário', DESCRICAO_CENARIOS[cenario]],
         ['Tabela de regras', versaoRegras],
         ['Premissa', 'O fornecedor mantém o preço líquido calculado a partir da nota de 2026.'],
-        ['Limitação', AVISO_REDUCOES],
+        ['Tratamento', AVISO_LOTE],
         [
           'Aviso',
           'Simulação para apoio à decisão; não substitui a análise do contador responsável.',

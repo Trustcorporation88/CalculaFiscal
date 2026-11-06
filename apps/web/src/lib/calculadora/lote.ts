@@ -8,6 +8,7 @@ export const LIMITE_LOTE = 500;
 export const COLUNAS_LOTE = [
   'descricao',
   'ncm',
+  'cClassTrib',
   'notaCompra',
   'aliquotaIcms',
   'aliquotaIpi',
@@ -21,6 +22,7 @@ export type ColunaLote = (typeof COLUNAS_LOTE)[number];
 export const CABECALHO_LOTE: Readonly<Record<ColunaLote, string>> = {
   descricao: 'Descrição',
   ncm: 'NCM',
+  cClassTrib: 'cClassTrib (vazio = tributação integral)',
   notaCompra: 'Total da nota (R$)',
   aliquotaIcms: 'ICMS do fornecedor (%)',
   aliquotaIpi: 'IPI (%)',
@@ -34,6 +36,7 @@ export const CABECALHO_LOTE: Readonly<Record<ColunaLote, string>> = {
 const APELIDOS: Readonly<Record<ColunaLote, readonly string[]>> = {
   descricao: ['descricao', 'produto'],
   ncm: ['ncm'],
+  cClassTrib: ['cclasstrib', 'classificacao tributaria', 'tratamento'],
   notaCompra: ['total da nota', 'nota', 'custo'],
   aliquotaIcms: ['icms do fornecedor', 'icms'],
   aliquotaIpi: ['ipi'],

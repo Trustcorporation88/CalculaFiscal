@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
 import type { BaseMargem, Regime } from '@calculafiscal/motor-fiscal';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
+import { rotuloReducao, type TratamentoInformado } from '@/lib/calculadora/avisos';
 import { ROTULO_BASE_MARGEM, ROTULO_REGIME } from '@/lib/calculadora/rotulos';
 
 export type Erros = Readonly<Record<string, string>>;
@@ -61,6 +62,43 @@ export function CampoNumero({
           {erro}
         </p>
       )}
+    </div>
+  );
+}
+
+/** Tratamento de CBS/IBS do produto (cClassTrib), entre os que estão na tabela de regras. */
+export function CampoTratamento({
+  iniciais,
+  erros,
+  tratamentos,
+}: {
+  iniciais: ValoresFormulario;
+  erros: Erros;
+  tratamentos: readonly TratamentoInformado[];
+}) {
+  const erro = erros['cClassTrib'];
+  return (
+    <div className="campo campo-largo">
+      <label htmlFor="cClassTrib">Tratamento de CBS e IBS (cClassTrib)</label>
+      <select
+        id="cClassTrib"
+        name="cClassTrib"
+        defaultValue={iniciais['cClassTrib'] ?? '000001'}
+        aria-invalid={erro ? true : undefined}
+        aria-describedby="cClassTrib-ajuda"
+      >
+        <option value="000001">000001: tributação integral</option>
+        {tratamentos.map((t) => (
+          <option key={t.codigo} value={t.codigo}>
+            {t.codigo}: {rotuloReducao(t.reducao)}, {t.descricao}
+          </option>
+        ))}
+      </select>
+      <p id="cClassTrib-ajuda" className="ajuda">
+        Reduções da LC 214 de 2027 em diante, na compra e na venda. Confirme que o NCM consta no
+        anexo do tratamento.
+      </p>
+      {erro && <p className="erro-campo">{erro}</p>}
     </div>
   );
 }

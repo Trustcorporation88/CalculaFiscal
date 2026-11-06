@@ -27,6 +27,8 @@ export const Tributo = z.enum([
   'IPI',
   /** Parâmetros da transição (fatores e chaves liga/desliga), não alíquotas. */
   'TRANSICAO',
+  /** Redução da CBS e do IBS por tratamento (cClassTrib): valor.aliquota é a fração reduzida. */
+  'REDUCAO_CBS_IBS',
 ]);
 
 export const Regra = z
@@ -42,6 +44,8 @@ export const Regra = z
       uf: z.array(z.string().length(2)).default([]),
       regime: z.array(z.enum(['SIMPLES_DAS', 'SIMPLES_REGULAR', 'PRESUMIDO', 'REAL'])).default([]),
       elo: z.array(z.enum(['PRODUCAO', 'IMPORTACAO', 'ATACADO', 'VAREJO', 'SERVICO'])).default([]),
+      /** Classificação tributária da NF-e (cClassTrib), 6 dígitos. */
+      cClassTrib: z.array(z.string().regex(/^\d{6}$/)).default([]),
     }),
     valor: z.object({
       aliquotaInicial: decimalStr.optional(),

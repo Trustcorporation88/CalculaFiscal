@@ -18,10 +18,12 @@ import {
 import {
   CENARIOS,
   resolverPeriodo,
+  tratamentosDisponiveis,
   type Cenario,
   type Regra,
   type TabelaDeRegras,
 } from '@calculafiscal/regras';
+import type { TratamentoInformado } from './avisos';
 import { lerEntrada, type EntradaCalculadora, type ValoresFormulario } from './entrada';
 import { CAMPO_AVISOS, COLUNAS_LOTE, LIMITE_LOTE } from './lote';
 import { ROTULO_CAMPO } from './rotulos';
@@ -60,6 +62,8 @@ export interface ResumoAno {
 
 export interface ResultadoCalculadora {
   readonly entrada: EntradaCalculadora;
+  /** Tratamento com redução informado; nulo na tributação integral. */
+  readonly tratamento: TratamentoInformado | null;
   readonly precoLiquidoFornecedor: string;
   readonly faixaPrecoLiquido: { readonly de: string; readonly ate: string };
   readonly memoriaNota: PassoMemoria;
@@ -107,6 +111,7 @@ function calcularCenario(
   const parametros = resolverPeriodo(tabela.regras, {
     cenario,
     ...(e.ncm ? { ncm: e.ncm } : {}),
+    cClassTrib: e.cClassTrib,
   });
   const [ano2026] = parametros;
   if (!ano2026 || ano2026.ano !== 2026) {
@@ -213,6 +218,8 @@ export function calcularLinhaDoTempo(
   }));
   return {
     entrada: e,
+    tratamento:
+      tratamentosDisponiveis(tabela.regras).find((t) => t.codigo === e.cClassTrib) ?? null,
     precoLiquidoFornecedor: principal.nota.precoLiquido,
     faixaPrecoLiquido: principal.nota.faixa,
     memoriaNota: principal.nota.memoria,

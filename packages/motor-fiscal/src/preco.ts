@@ -1,5 +1,6 @@
 import { apurarCreditos, reconstruirCompra, type Compra, type Creditos } from './compra.js';
 import { arredondarMoeda, D, dec, type Dec } from './decimal.js';
+import { aliquotasCbsIbs } from './efetivas.js';
 import type { PassoMemoria } from './memoria.js';
 import {
   ORDEM_STATUS,
@@ -77,6 +78,9 @@ type Contexto = {
   readonly aPc: Dec;
   readonly aDas: Dec;
   readonly porFora: Dec;
+  /** CBS e IBS do ano já reduzidos pelo tratamento do produto. */
+  readonly cbs: Dec;
+  readonly ibs: Dec;
   readonly dentro: Dec;
   readonly desp: Dec;
   /** Preço com tributo = preço × k, porque CBS/IBS incidem sobre o preço sem ICMS e PIS/Cofins. */
@@ -120,8 +124,8 @@ function prepararAno(e: EntradaPrecificacao, p: ParametrosAno): Contexto | Resul
   const aIcms = simples ? ZERO : dec(perfil.aliquotaIcmsSaida).times(fator);
   const aPc = !simples && p.pisCofinsVigente ? dec(perfil.aliquotaPisCofinsSaida) : ZERO;
   const aDas = regularNoSimples ? das.times(UM.minus(parcela as Dec)) : das;
-  const porFora =
-    p.cbsIbsComEfeito && perfil.regime !== 'SIMPLES_DAS' ? dec(p.cbs).plus(dec(p.ibs)) : ZERO;
+  const ef = aliquotasCbsIbs(p);
+  const porFora = p.cbsIbsComEfeito && perfil.regime !== 'SIMPLES_DAS' ? ef.cbs.plus(ef.ibs) : ZERO;
   return {
     p,
     perfil,
@@ -137,6 +141,8 @@ function prepararAno(e: EntradaPrecificacao, p: ParametrosAno): Contexto | Resul
     aPc,
     aDas,
     porFora,
+    cbs: ef.cbs,
+    ibs: ef.ibs,
     dentro: aIcms.plus(aPc).plus(aDas),
     desp: dec(perfil.despesasVariaveis),
     k: UM.plus(porFora.times(UM.minus(aIcms).minus(aPc))),
@@ -152,8 +158,8 @@ function montarResultado(c: Contexto, preco: Dec, passoPreco: PassoMemoria): Res
   const pisCofins = arredondarMoeda(preco.times(c.aPc));
   const valorDas = arredondarMoeda(preco.times(c.aDas));
   const base = preco.minus(icms).minus(pisCofins);
-  const cbs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.cbs)));
-  const ibs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(dec(p.ibs)));
+  const cbs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(c.cbs));
+  const ibs = c.porFora.isZero() ? ZERO : arredondarMoeda(base.times(c.ibs));
   const despesas = arredondarMoeda(preco.times(c.desp));
   const tributosDentro = icms.plus(pisCofins).plus(valorDas);
   const receitaLiquida = preco.minus(tributosDentro);
@@ -304,7 +310,7 @@ export function avaliarPreco(
       .minus(arredondarMoeda(preco.times(c.aPc)));
     return c.porFora.isZero()
       ? ZERO
-      : arredondarMoeda(base.times(dec(p.cbs))).plus(arredondarMoeda(base.times(dec(p.ibs))));
+      : arredondarMoeda(base.times(c.cbs)).plus(arredondarMoeda(base.times(c.ibs)));
   };
   // O total cresce com o preço: parte de 2 centavos abaixo da divisão e sobe enquanto couber.
   const inicio = D.max(ZERO, arredondarMoeda(alvo.div(c.k)).minus(CENTAVO.times(2)));

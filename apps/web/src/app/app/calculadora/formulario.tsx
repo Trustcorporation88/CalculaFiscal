@@ -2,9 +2,14 @@
 
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
-import { AVISO_REDUCOES } from '@/lib/calculadora/avisos';
+import { avisoTratamento, type TratamentoInformado } from '@/lib/calculadora/avisos';
 import { abasDoResultado } from '@/lib/calculadora/planilha';
-import { CampoCenario, CampoNumero, CamposVenda } from '@/components/calculadora/campos';
+import {
+  CampoCenario,
+  CampoNumero,
+  CampoTratamento,
+  CamposVenda,
+} from '@/components/calculadora/campos';
 import { CenariosLadoALado } from '@/components/calculadora/cenarios';
 import { Comparador } from '@/components/calculadora/comparador';
 import { BotoesExportar } from '@/components/calculadora/exportar';
@@ -18,7 +23,13 @@ import { calcular, type EstadoCalculadora } from './actions';
 
 const INICIAL: EstadoCalculadora = { situacao: 'vazio' };
 
-export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulario }) {
+export function FormularioCalculadora({
+  iniciais,
+  tratamentos,
+}: {
+  iniciais: ValoresFormulario;
+  tratamentos: readonly TratamentoInformado[];
+}) {
   const [estado, acao, pendente] = useActionState(calcular, INICIAL);
   const [temSt, setTemSt] = useState(iniciais['temSt'] === 'on');
   const erros = estado.situacao === 'erro' ? estado.campos : {};
@@ -67,6 +78,7 @@ export function FormularioCalculadora({ iniciais }: { iniciais: ValoresFormulari
             )}
           </div>
           <CampoCenario iniciais={iniciais} />
+          <CampoTratamento iniciais={iniciais} erros={erros} tratamentos={tratamentos} />
         </fieldset>
 
         <fieldset>
@@ -175,7 +187,7 @@ function Resultado({ estado }: { estado: Extract<EstadoCalculadora, { situacao: 
       </p>
 
       {r.ajusteNota && <p className="aviso aviso-pendente">{r.ajusteNota}</p>}
-      <p className="aviso aviso-pendente">{AVISO_REDUCOES}</p>
+      <p className="aviso aviso-pendente">{avisoTratamento(r.tratamento)}</p>
 
       <h3>Linha do tempo</h3>
       <LinhaDoTempo anos={r.anos} simples={simples} />
