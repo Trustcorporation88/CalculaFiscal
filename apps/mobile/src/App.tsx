@@ -188,8 +188,8 @@ function Raiz() {
       <View style={estilos.abas} accessibilityRole="tablist">
         {(
           [
-            { id: 'calculadora', texto: 'Calcular preço' },
             { id: 'empresa', texto: 'Minha empresa' },
+            { id: 'calculadora', texto: 'Calcular preço' },
           ] as const
         ).map((a) => {
           const ativa = tela === a.id;
