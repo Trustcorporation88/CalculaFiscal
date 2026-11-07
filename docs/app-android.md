@@ -31,6 +31,7 @@ O APK é assinado com a chave da empresa. Atualizações precisam ser assinadas 
 Pré-requisitos neste computador: JDK 17 e o Android SDK em `%LOCALAPPDATA%\Android\Sdk`.
 
 A chave de assinatura e a senha ficam **fora do repositório**, em `%USERPROFILE%\.calculafiscal\android\`:
+
 - `calculadora-fiscal.keystore`
 - `assinatura.properties`
 
