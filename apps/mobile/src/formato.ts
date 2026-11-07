@@ -29,6 +29,7 @@ export const COR_STATUS: Readonly<Record<Status, string>> = {
 };
 
 export const COR_IMPOSTO: Readonly<Record<string, string>> = {
+  IS: '#be123c',
   ICMS: '#b45309',
   'PIS/Cofins': '#9a3412',
   DAS: '#c2410c',

@@ -1,7 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import * as Sharing from 'expo-sharing';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type HostInstance,
   Image,
   StatusBar as BarraDeStatus,
   KeyboardAvoidingView,
@@ -13,6 +15,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
 import {
   calcular,
@@ -24,13 +27,47 @@ import {
   type ConfigEmpresa,
   type RegimeApp,
   type ResultadoAnoApp,
+  type Seletivo,
   type Tratamento,
 } from './calculo';
+import {
+  dataCurta,
+  DIAS_PARA_AVISO,
+  diasSemConferir,
+  estadoInicial,
+  procurarAtualizacao,
+  type EstadoTabelas,
+  type Guardado,
+} from './tabelas';
 import { dasEfetivoComercio, REFERENCIAS } from './referencias';
 import { CORES, COR_IMPOSTO, COR_STATUS, porcento, reais, ROTULO_STATUS } from './formato';
 
 const CHAVE_CONFIG = 'calculadora-fiscal:config:v1';
 const CHAVE_ULTIMO = 'calculadora-fiscal:ultimo:v1';
+const CHAVE_PACOTE = 'calculadora-fiscal:regras-pacote:v1';
+const CHAVE_VERIFICADO = 'calculadora-fiscal:regras-verificado:v1';
+
+type Busca = 'parada' | 'buscando' | 'em-dia' | 'atualizada' | 'sem-conexao' | 'recusada';
+
+async function lerTexto(chave: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(chave);
+  } catch {
+    return null;
+  }
+}
+
+/** O pacote de regras guardado; a assinatura é conferida de novo em estadoInicial. */
+async function lerGuardado(): Promise<Guardado> {
+  const bruto = await lerTexto(CHAVE_PACOTE);
+  let pacote: Guardado['pacote'] = null;
+  try {
+    pacote = bruto ? (JSON.parse(bruto) as Guardado['pacote']) : null;
+  } catch {
+    pacote = null;
+  }
+  return { pacote, verificadoEm: await lerTexto(CHAVE_VERIFICADO) };
+}
 
 /** Guarda só no aparelho: nada digitado sai do celular. */
 async function lerJson<T>(chave: string, padrao: T): Promise<T> {
@@ -62,23 +99,50 @@ function Raiz() {
   const [custo, setCusto] = useState('');
   const [margem, setMargem] = useState('');
   const [ano, setAno] = useState(2026);
+  const [ncm, setNcm] = useState('');
+  const [tabelas, setTabelas] = useState<EstadoTabelas>(() => estadoInicial(null));
+  const [busca, setBusca] = useState<Busca>('parada');
+  const [motivo, setMotivo] = useState('');
+
+  /** Confere no site se há tabela nova. Sem internet, segue com a que está no celular. */
+  const procurar = async (atual: EstadoTabelas) => {
+    setBusca('buscando');
+    const r = await procurarAtualizacao(atual.tabela);
+    if (r.tipo === 'atualizada') {
+      setTabelas({ tabela: r.tabela, origem: 'baixada', verificadoEm: r.verificadoEm });
+      gravarJson(CHAVE_PACOTE, r.pacote);
+    } else if (r.tipo === 'em-dia') {
+      setTabelas((t) => ({ ...t, verificadoEm: r.verificadoEm }));
+    }
+    if (r.tipo === 'atualizada' || r.tipo === 'em-dia') {
+      AsyncStorage.setItem(CHAVE_VERIFICADO, r.verificadoEm).catch(() => undefined);
+    }
+    setMotivo(r.tipo === 'recusada' ? r.motivo : '');
+    setBusca(r.tipo);
+  };
 
   useEffect(() => {
     void (async () => {
       const c = await lerJson(CHAVE_CONFIG, CONFIG_INICIAL);
-      const u = await lerJson(CHAVE_ULTIMO, { custo: '', margem: '', ano: 2026 });
+      const u = await lerJson(CHAVE_ULTIMO, { custo: '', margem: '', ano: 2026, ncm: '' });
+      const estado = estadoInicial(await lerGuardado());
       setConfig(c);
       setCusto(u.custo);
       setMargem(u.margem);
       setAno(u.ano);
+      setNcm(u.ncm);
+      setTabelas(estado);
       if (pendenciasConfig(c).length > 0) setTela('empresa');
       setCarregado(true);
+      void procurar(estado);
     })();
+    // procurar só usa setters estáveis; roda uma vez, ao abrir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    if (carregado) gravarJson(CHAVE_ULTIMO, { custo, margem, ano });
-  }, [carregado, custo, margem, ano]);
+    if (carregado) gravarJson(CHAVE_ULTIMO, { custo, margem, ano, ncm });
+  }, [carregado, custo, margem, ano, ncm]);
 
   if (!carregado) return <View style={[estilos.tela, estilos.areaSegura]} />;
 
@@ -122,9 +186,15 @@ function Raiz() {
             custo={custo}
             margem={margem}
             ano={ano}
+            ncm={ncm}
             setCusto={setCusto}
             setMargem={setMargem}
             setAno={setAno}
+            setNcm={setNcm}
+            tabelas={tabelas}
+            busca={busca}
+            motivo={motivo}
+            aoProcurar={() => void procurar(tabelas)}
           />
         )}
       </KeyboardAvoidingView>
@@ -139,6 +209,8 @@ function Campo(props: {
   sufixo?: string;
   grande?: boolean;
   dica?: string;
+  exemplo?: string;
+  teclado?: 'decimal-pad' | 'number-pad';
 }) {
   return (
     <View style={[estilos.campo, props.grande && estilos.campoGrande]}>
@@ -147,8 +219,8 @@ function Campo(props: {
         <TextInput
           value={props.valor}
           onChangeText={props.aoMudar}
-          keyboardType="decimal-pad"
-          placeholder="0"
+          keyboardType={props.teclado ?? 'decimal-pad'}
+          placeholder={props.exemplo ?? '0'}
           placeholderTextColor={CORES.borda}
           style={[estilos.entrada, props.grande && estilos.entradaGrande]}
           accessibilityLabel={props.rotulo}
@@ -165,15 +237,44 @@ function TelaCalculadora(props: {
   custo: string;
   margem: string;
   ano: number;
+  ncm: string;
   setCusto: (v: string) => void;
   setMargem: (v: string) => void;
   setAno: (v: number) => void;
+  setNcm: (v: string) => void;
+  tabelas: EstadoTabelas;
+  busca: Busca;
+  motivo: string;
+  aoProcurar: () => void;
 }) {
+  const tabela = props.tabelas.tabela;
   const calculo = useMemo(
-    () => calcular(props.config, props.custo, props.margem),
-    [props.config, props.custo, props.margem],
+    () => calcular(props.config, props.custo, props.margem, { ncm: props.ncm, tabela }),
+    [props.config, props.custo, props.margem, props.ncm, tabela],
   );
   const atual = calculo.ok ? calculo.anos.find((a) => a.ano === props.ano) : undefined;
+  const dias = diasSemConferir(props.tabelas);
+  const imagem = useRef<HostInstance>(null);
+  const [compartilhando, setCompartilhando] = useState(false);
+  const [erroCompartilhar, setErroCompartilhar] = useState('');
+
+  /** Foto do cartão do resultado, aberta no menu do Android (WhatsApp, e-mail etc.). */
+  const compartilhar = async () => {
+    setErroCompartilhar('');
+    setCompartilhando(true);
+    try {
+      if (!(await Sharing.isAvailableAsync())) {
+        setErroCompartilhar('Este celular não permite compartilhar arquivos.');
+        return;
+      }
+      const uri = await captureRef(imagem, { format: 'png', quality: 1, result: 'tmpfile' });
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Compartilhar preço' });
+    } catch {
+      setErroCompartilhar('Não foi possível gerar a imagem.');
+    } finally {
+      setCompartilhando(false);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
@@ -188,6 +289,24 @@ function TelaCalculadora(props: {
         />
         <Campo rotulo="Margem" valor={props.margem} aoMudar={props.setMargem} sufixo="%" grande />
       </View>
+
+      <Campo
+        rotulo="NCM do produto (opcional)"
+        valor={props.ncm}
+        aoMudar={props.setNcm}
+        teclado="number-pad"
+        exemplo="2202.10.00"
+        dica={DICA_SELETIVO[calculo.ok ? calculo.seletivo : 'sem-ncm']}
+      />
+
+      {dias > DIAS_PARA_AVISO && (
+        <View style={estilos.aviso}>
+          <Text style={estilos.avisoTexto}>
+            Faz {dias} dias que o app não confere as tabelas de alíquotas no site. Conecte à
+            internet e toque em Procurar atualização, no fim da tela.
+          </Text>
+        </View>
+      )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={estilos.anos}>
         {[2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033].map((a) => (
@@ -208,7 +327,30 @@ function TelaCalculadora(props: {
           <Text style={estilos.avisoTexto}>{calculo.erro}</Text>
         </View>
       ) : atual ? (
-        <Resultado r={atual} />
+        <>
+          <View ref={imagem} collapsable={false} style={estilos.areaImagem}>
+            <Resultado
+              r={atual}
+              resumo={[
+                `Custo ${reais(numero(props.custo) ?? '0')}`,
+                `margem ${props.margem}%`,
+                ROTULO_REGIME[props.config.regime],
+                ...(props.ncm.trim() ? [`NCM ${props.ncm.trim()}`] : []),
+              ].join(' · ')}
+            />
+          </View>
+          <Pressable
+            onPress={() => void compartilhar()}
+            disabled={compartilhando}
+            style={[estilos.botaoCompartilhar, compartilhando && estilos.botaoInativo]}
+            accessibilityRole="button"
+          >
+            <Text style={estilos.botaoTexto}>
+              {compartilhando ? 'Gerando imagem…' : 'Compartilhar no WhatsApp'}
+            </Text>
+          </Pressable>
+          {erroCompartilhar !== '' && <Text style={estilos.falta}>{erroCompartilhar}</Text>}
+        </>
       ) : null}
 
       {calculo.ok && (
@@ -239,11 +381,76 @@ function TelaCalculadora(props: {
         {DESCRICAO_CENARIOS[props.config.cenario]}. Simulação para apoio à decisão; não substitui o
         contador. Nada digitado sai do celular.
       </Text>
+
+      <CartaoTabelas
+        estado={props.tabelas}
+        busca={props.busca}
+        motivo={props.motivo}
+        aoProcurar={props.aoProcurar}
+      />
     </ScrollView>
   );
 }
 
-function Resultado({ r }: { r: ResultadoAnoApp }) {
+const DICA_SELETIVO: Readonly<Record<Seletivo, string>> = {
+  'sem-ncm':
+    'Informe para bebidas açucaradas, bebidas alcoólicas e fumo, que pagam Imposto Seletivo a partir de fevereiro de 2027.',
+  'nao-incide': 'Este NCM não tem Imposto Seletivo nas tabelas.',
+  incide:
+    'Tem Imposto Seletivo a partir de fevereiro de 2027. Ele é cobrado do fabricante ou importador e chega embutido no seu custo de compra, sem crédito.',
+};
+
+const TEXTO_BUSCA: Readonly<Record<Busca, string>> = {
+  parada: '',
+  buscando: 'Conferindo no site…',
+  'em-dia': 'As tabelas estão em dia.',
+  atualizada: 'Tabelas atualizadas. A assinatura digital foi conferida.',
+  'sem-conexao': 'Sem conexão com o site: seguem as tabelas que estão no celular.',
+  recusada: 'O pacote do site foi recusado e seguem as tabelas que estão no celular.',
+};
+
+/** Versão e data das tabelas em uso, e o botão para procurar uma versão nova no site. */
+function CartaoTabelas(props: {
+  estado: EstadoTabelas;
+  busca: Busca;
+  motivo: string;
+  aoProcurar: () => void;
+}) {
+  const { tabela, origem, verificadoEm } = props.estado;
+  const dias = diasSemConferir(props.estado);
+  return (
+    <View style={[estilos.cartao, dias > DIAS_PARA_AVISO && estilos.cartaoAlerta]}>
+      <Text style={estilos.tituloCartao}>Tabelas de alíquotas</Text>
+      <Text style={estilos.dica}>
+        Versão {tabela.versao}, publicada em {dataCurta(tabela.publicadoEm)}
+        {origem === 'baixada' ? ' e baixada do site.' : ', que veio com o app.'}
+      </Text>
+      <Text style={estilos.dica}>
+        {verificadoEm
+          ? `Conferidas no site em ${dataCurta(verificadoEm)}.`
+          : 'Ainda não conferidas no site.'}
+      </Text>
+      {props.busca !== 'parada' && (
+        <Text style={props.busca === 'recusada' ? estilos.falta : estilos.dica}>
+          {TEXTO_BUSCA[props.busca]}
+          {props.motivo ? ` (${props.motivo})` : ''}
+        </Text>
+      )}
+      <Pressable
+        onPress={props.aoProcurar}
+        disabled={props.busca === 'buscando'}
+        style={[estilos.atalho, props.busca === 'buscando' && estilos.botaoInativo]}
+        accessibilityRole="button"
+      >
+        <Text style={estilos.atalhoTexto}>Procurar atualização</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+const ROTULO_PARTE: Readonly<Record<string, string>> = { IS: 'Imposto Seletivo (na compra)' };
+
+function Resultado({ r, resumo }: { r: ResultadoAnoApp; resumo: string }) {
   if (r.situacao === 'pendente') {
     return (
       <View style={estilos.aviso}>
@@ -299,7 +506,9 @@ function Resultado({ r }: { r: ResultadoAnoApp }) {
         return (
           <View key={p.nome} style={estilos.linhaParte}>
             <View style={[estilos.ponto, { backgroundColor: p.cor }]} />
-            <Text style={[estilos.parteNome, imposto && estilos.parteImposto]}>{p.nome}</Text>
+            <Text style={[estilos.parteNome, imposto && estilos.parteImposto]}>
+              {ROTULO_PARTE[p.nome] ?? p.nome}
+            </Text>
             <Text style={[estilos.parteValor, imposto && estilos.parteImposto]}>
               {reais(p.valor)}
             </Text>
@@ -309,6 +518,10 @@ function Resultado({ r }: { r: ResultadoAnoApp }) {
       <Text style={estilos.margens}>
         Margem sobre o preço {porcento(r.margemSobrePreco)} · sobre a receita líquida{' '}
         {porcento(r.margemSobreReceita)}
+      </Text>
+      <Text style={estilos.resumo}>{resumo}</Text>
+      <Text style={estilos.assinaturaImagem}>
+        Calculadora Fiscal · imposto.trustcorp.com.br · simulação, confirme com o seu contador
       </Text>
     </View>
   );
@@ -756,5 +969,15 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   botaoInativo: { opacity: 0.5 },
+  areaImagem: { backgroundColor: CORES.papel },
+  botaoCompartilhar: {
+    backgroundColor: '#1e7a4c',
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  cartaoAlerta: { borderColor: '#f2a65a', backgroundColor: '#fff7ed' },
+  resumo: { color: '#e8ecf4', fontSize: 13, marginTop: 6 },
+  assinaturaImagem: { color: '#9fb6d3', fontSize: 11, marginTop: 2 },
   botaoTexto: { color: '#ffffff', fontWeight: '800', fontSize: 16 },
 });
