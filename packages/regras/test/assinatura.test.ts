@@ -84,5 +84,8 @@ describe('pacote de regras assinado', () => {
       expect(Buffer.from(deBase64(b64) as Uint8Array).toString('utf8')).toBe(s);
     }
     expect(deBase64('@@')).toBeNull();
+    // Muitos "=" no fim não travam a leitura.
+    expect(deBase64(`QQ${'='.repeat(100_000)}@`)).toBeNull();
+    expect(Buffer.from(deBase64(`QQ${'='.repeat(100_000)}`) as Uint8Array).toString()).toBe('A');
   });
 });

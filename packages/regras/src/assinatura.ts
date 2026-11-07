@@ -40,7 +40,10 @@ const ALFABETO = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789
 
 /** Base64 para bytes, sem depender de atob/Buffer (Hermes, navegador e Node). */
 export function deBase64(texto: string): Uint8Array | null {
-  const limpo = texto.replace(/=+$/, '');
+  // Laço em vez de /=+$/: a regex fica quadrática com muitos "=" (ReDoS).
+  let fim = texto.length;
+  while (fim > 0 && texto[fim - 1] === '=') fim--;
+  const limpo = texto.slice(0, fim);
   if (!/^[A-Za-z0-9+/]*$/.test(limpo) || limpo.length % 4 === 1) return null;
   const bytes = new Uint8Array(Math.floor((limpo.length * 3) / 4));
   let acumulado = 0;
