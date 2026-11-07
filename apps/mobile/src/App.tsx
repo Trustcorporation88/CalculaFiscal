@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Image,
+  StatusBar as BarraDeStatus,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,7 +13,6 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
 import {
   calcular,
@@ -46,10 +46,10 @@ function gravarJson(chave: string, valor: unknown) {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
+    <>
       <StatusBar style="dark" />
       <Raiz />
-    </SafeAreaProvider>
+    </>
   );
 }
 
@@ -78,10 +78,10 @@ function Raiz() {
     if (carregado) gravarJson(CHAVE_ULTIMO, { custo, margem, ano });
   }, [carregado, custo, margem, ano]);
 
-  if (!carregado) return <SafeAreaView style={estilos.tela} />;
+  if (!carregado) return <View style={[estilos.tela, estilos.areaSegura]} />;
 
   return (
-    <SafeAreaView style={estilos.tela} edges={['top', 'left', 'right']}>
+    <View style={[estilos.tela, estilos.areaSegura]}>
       <View style={estilos.topo}>
         <View style={estilos.marca}>
           <Image
@@ -126,7 +126,7 @@ function Raiz() {
           />
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -447,6 +447,8 @@ function TelaEmpresa({
 const estilos = StyleSheet.create({
   flex: { flex: 1 },
   tela: { flex: 1, backgroundColor: CORES.papel },
+  // O Android desenha o app sob a barra de status (edge-to-edge): afasta o conteúdo dela.
+  areaSegura: { paddingTop: Platform.OS === 'android' ? (BarraDeStatus.currentHeight ?? 24) : 44 },
   topo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -469,7 +471,8 @@ const estilos = StyleSheet.create({
     borderColor: CORES.primaria,
   },
   botaoTopoTexto: { color: CORES.primaria, fontWeight: '700' },
-  conteudo: { padding: 16, gap: 16, paddingBottom: 48 },
+  // Folga embaixo para a barra de navegação do Android, que fica por cima do conteúdo.
+  conteudo: { padding: 16, gap: 16, paddingBottom: 72 },
   titulo: { fontSize: 24, fontWeight: '800', color: CORES.tinta },
   linhaCampos: { flexDirection: 'row', gap: 12 },
   campo: { gap: 6 },

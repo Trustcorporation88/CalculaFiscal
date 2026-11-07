@@ -36,6 +36,16 @@ A chave de assinatura e a senha ficam **fora do repositório**, em `%USERPROFILE
 
 Guarde uma cópia em lugar seguro. Sem ela, não é possível atualizar o app instalado.
 
+> **Caminho sem espaços.** O build do Android quebra quando o projeto está numa pasta com espaço no nome (como `C:\Calculadora Fiscal`): o compilador Hermes é chamado sem aspas. Compile a partir de um worktree num caminho sem espaços:
+>
+> ```bash
+> git worktree add --detach C:/cf-apk HEAD
+> cd C:/cf-apk && pnpm install --frozen-lockfile
+> pnpm turbo run build --filter=@calculafiscal/regras --filter=@calculafiscal/motor-fiscal
+> ```
+>
+> e rode os passos abaixo dentro de `C:\cf-apk\apps\mobile`.
+
 1. Suba `expo.version` e `expo.android.versionCode` em `apps/mobile/app.json`.
 2. Gere a pasta nativa, que não é versionada: `cd apps/mobile` e `npx expo prebuild -p android --clean --no-install`.
 3. Compile com as propriedades de assinatura (o plugin `plugins/assinatura-release.js` as lê do Gradle):
