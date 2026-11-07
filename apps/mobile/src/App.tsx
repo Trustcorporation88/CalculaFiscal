@@ -3,7 +3,9 @@ import { StatusBar } from 'expo-status-bar';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BackHandler,
   type HostInstance,
+  type ScrollViewInstance,
   Image,
   StatusBar as BarraDeStatus,
   KeyboardAvoidingView,
@@ -96,6 +98,24 @@ function Raiz() {
   const [carregado, setCarregado] = useState(false);
   const [config, setConfig] = useState<ConfigEmpresa>(CONFIG_INICIAL);
   const [tela, setTela] = useState<'calculadora' | 'empresa'>('calculadora');
+  /** Muda a cada toque em "Início": a tela de cálculo rola até o começo. */
+  const [inicio, setInicio] = useState(0);
+  const irParaInicio = () => {
+    setTela('calculadora');
+    setInicio((n) => n + 1);
+  };
+
+  // Botão "voltar" do Android: da tela Empresa volta ao cálculo; no cálculo, fecha o app.
+  useEffect(() => {
+    const assinatura = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (tela === 'empresa') {
+        setTela('calculadora');
+        return true;
+      }
+      return false;
+    });
+    return () => assinatura.remove();
+  }, [tela]);
   const [custo, setCusto] = useState('');
   const [margem, setMargem] = useState('');
   const [ano, setAno] = useState(2026);
@@ -149,7 +169,12 @@ function Raiz() {
   return (
     <View style={[estilos.tela, estilos.areaSegura]}>
       <View style={estilos.topo}>
-        <View style={estilos.marca}>
+        <Pressable
+          onPress={irParaInicio}
+          style={estilos.marca}
+          accessibilityRole="button"
+          accessibilityLabel="Início"
+        >
           <Image
             source={require('../assets/icon.png')}
             style={estilos.simbolo}
@@ -158,14 +183,28 @@ function Raiz() {
           <Text style={estilos.marcaTexto} numberOfLines={1}>
             Calculadora <Text style={estilos.negrito}>Fiscal</Text>
           </Text>
-        </View>
-        <Pressable
-          onPress={() => setTela(tela === 'empresa' ? 'calculadora' : 'empresa')}
-          style={estilos.botaoTopo}
-          accessibilityRole="button"
-        >
-          <Text style={estilos.botaoTopoTexto}>{tela === 'empresa' ? 'Calcular' : 'Empresa'}</Text>
         </Pressable>
+      </View>
+      <View style={estilos.abas} accessibilityRole="tablist">
+        {(
+          [
+            { id: 'calculadora', texto: 'Calcular preço' },
+            { id: 'empresa', texto: 'Minha empresa' },
+          ] as const
+        ).map((a) => {
+          const ativa = tela === a.id;
+          return (
+            <Pressable
+              key={a.id}
+              onPress={() => (a.id === 'calculadora' ? irParaInicio() : setTela('empresa'))}
+              style={[estilos.aba, ativa && estilos.abaAtiva]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: ativa }}
+            >
+              <Text style={[estilos.abaTexto, ativa && estilos.abaTextoAtiva]}>{a.texto}</Text>
+            </Pressable>
+          );
+        })}
       </View>
       <KeyboardAvoidingView
         style={estilos.flex}
@@ -186,6 +225,7 @@ function Raiz() {
             custo={custo}
             margem={margem}
             ano={ano}
+            inicio={inicio}
             ncm={ncm}
             setCusto={setCusto}
             setMargem={setMargem}
@@ -237,6 +277,7 @@ function TelaCalculadora(props: {
   custo: string;
   margem: string;
   ano: number;
+  inicio: number;
   ncm: string;
   setCusto: (v: string) => void;
   setMargem: (v: string) => void;
@@ -248,6 +289,10 @@ function TelaCalculadora(props: {
   aoProcurar: () => void;
 }) {
   const tabela = props.tabelas.tabela;
+  const rolagem = useRef<ScrollViewInstance>(null);
+  useEffect(() => {
+    rolagem.current?.scrollTo({ y: 0, animated: true });
+  }, [props.inicio]);
   const calculo = useMemo(
     () => calcular(props.config, props.custo, props.margem, { ncm: props.ncm, tabela }),
     [props.config, props.custo, props.margem, props.ncm, tabela],
@@ -277,7 +322,11 @@ function TelaCalculadora(props: {
   };
 
   return (
-    <ScrollView contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      ref={rolagem}
+      contentContainerStyle={estilos.conteudo}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={estilos.linhaCampos}>
         <Campo
           rotulo="Custo do produto"
@@ -814,14 +863,26 @@ const estilos = StyleSheet.create({
   simbolo: { width: 32, height: 32 },
   marcaTexto: { fontSize: 17, color: CORES.tinta, flexShrink: 1 },
   negrito: { fontWeight: '800' },
-  botaoTopo: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+  abas: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: CORES.superficie,
+    borderBottomWidth: 1,
+    borderBottomColor: CORES.borda,
+  },
+  aba: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: CORES.primaria,
   },
-  botaoTopoTexto: { color: CORES.primaria, fontWeight: '700' },
+  abaAtiva: { backgroundColor: CORES.primaria },
+  abaTexto: { color: CORES.primaria, fontWeight: '800', fontSize: 15 },
+  abaTextoAtiva: { color: '#ffffff' },
   // Folga embaixo para a barra de navegação do Android, que fica por cima do conteúdo.
   conteudo: { padding: 16, gap: 16, paddingBottom: 72 },
   titulo: { fontSize: 24, fontWeight: '800', color: CORES.tinta },
