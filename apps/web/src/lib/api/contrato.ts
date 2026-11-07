@@ -157,6 +157,7 @@ const Valores = z.object({
   precoComTributo: z.string().describe('O que o cliente paga: preço + CBS + IBS por fora.'),
   custoLiquido: z.string(),
   totalNotaCompra: z.string(),
+  isCompra: z.string().describe('Imposto Seletivo embutido no preço do fornecedor (sem crédito).'),
   icms: z.string(),
   pisCofins: z.string(),
   das: z.string(),
