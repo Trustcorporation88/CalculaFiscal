@@ -17,6 +17,7 @@ import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
 import {
   calcular,
   CONFIG_INICIAL,
+  numero,
   pendenciasConfig,
   ROTULO_REGIME,
   ROTULO_TRATAMENTO,
@@ -25,6 +26,7 @@ import {
   type ResultadoAnoApp,
   type Tratamento,
 } from './calculo';
+import { dasEfetivoComercio, REFERENCIAS } from './referencias';
 import { CORES, COR_IMPOSTO, COR_STATUS, porcento, reais, ROTULO_STATUS } from './formato';
 
 const CHAVE_CONFIG = 'calculadora-fiscal:config:v1';
@@ -89,7 +91,7 @@ function Raiz() {
             style={estilos.simbolo}
             accessibilityIgnoresInvertColors
           />
-          <Text style={estilos.marcaTexto}>
+          <Text style={estilos.marcaTexto} numberOfLines={1}>
             Calculadora <Text style={estilos.negrito}>Fiscal</Text>
           </Text>
         </View>
@@ -340,6 +342,82 @@ function Opcoes<T extends string>(props: {
   );
 }
 
+/** Soma dois percentuais digitados ("6" + "2,28" = "8,28"). Vazio conta como zero. */
+function somar(a: string, b: string): string {
+  const x = Number(numero(a) ?? '0');
+  const y = Number(numero(b) ?? '0');
+  return String(Math.round((x + y) * 100) / 100).replace('.', ',');
+}
+
+/** Botões que preenchem um campo com um valor de referência, com uma nota explicando. */
+function Atalhos(props: {
+  titulo: string;
+  opcoes: readonly { texto: string; valor: string }[];
+  aoUsar: (valor: string) => void;
+  nota: string;
+}) {
+  return (
+    <View style={estilos.ajuda}>
+      <Text style={estilos.ajudaTitulo}>{props.titulo}</Text>
+      <View style={estilos.opcoes}>
+        {props.opcoes.map((o) => (
+          <Pressable
+            key={o.texto}
+            onPress={() => props.aoUsar(o.valor)}
+            style={estilos.atalho}
+            accessibilityRole="button"
+          >
+            <Text style={estilos.atalhoTexto}>{o.texto}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={estilos.dica}>{props.nota}</Text>
+    </View>
+  );
+}
+
+/** Não sabe o DAS? Calcula a alíquota efetiva do comércio pelo faturamento de 12 meses. */
+function AjudaSimples({ aoUsar }: { aoUsar: (percentual: string) => void }) {
+  const [faturamento, setFaturamento] = useState('');
+  const r = faturamento.trim() === '' ? null : dasEfetivoComercio(faturamento);
+  return (
+    <View style={estilos.ajuda}>
+      <Text style={estilos.ajudaTitulo}>Não sabe o DAS?</Text>
+      <Text style={estilos.dica}>
+        Informe quanto a empresa faturou nos últimos 12 meses. A conta usa a tabela do comércio
+        (Anexo I da LC 123): por exemplo, R$ 360 mil por ano dá cerca de 5,65%, e R$ 720 mil, cerca
+        de 7,58%.
+      </Text>
+      <Campo
+        rotulo="Faturamento dos últimos 12 meses"
+        valor={faturamento}
+        aoMudar={setFaturamento}
+        sufixo="R$"
+      />
+      {r && !r.ok && <Text style={estilos.falta}>{r.erro}</Text>}
+      {r && r.ok && (
+        <>
+          <Text style={estilos.ajudaResultado}>
+            DAS efetivo estimado: {r.percentual}% (faixa {r.faixa} do comércio)
+          </Text>
+          {r.aviso && <Text style={estilos.falta}>{r.aviso}</Text>}
+          <Pressable
+            onPress={() => aoUsar(r.percentual)}
+            style={estilos.atalho}
+            accessibilityRole="button"
+          >
+            <Text style={estilos.atalhoTexto}>Usar {r.percentual}%</Text>
+          </Pressable>
+        </>
+      )}
+      <Text style={estilos.dica}>
+        Indústria e serviços usam outras tabelas (Anexos II a V). Produtos com ICMS-ST ou
+        monofásicos pagam menos DAS, porque essas parcelas saem da conta.
+      </Text>
+    </View>
+  );
+}
+
 function TelaEmpresa({
   inicial,
   aoSalvar,
@@ -369,12 +447,16 @@ function TelaEmpresa({
       />
 
       {c.regime === 'SIMPLES_DAS' ? (
-        <Campo
-          rotulo="Alíquota efetiva do DAS"
-          valor={c.aliquotaDas}
-          aoMudar={(v) => muda('aliquotaDas', v)}
-          sufixo="%"
-        />
+        <>
+          <Campo
+            rotulo="Alíquota efetiva do DAS"
+            valor={c.aliquotaDas}
+            aoMudar={(v) => muda('aliquotaDas', v)}
+            sufixo="%"
+            dica="O percentual que você paga de DAS sobre o faturamento do mês."
+          />
+          <AjudaSimples aoUsar={(v) => muda('aliquotaDas', v)} />
+        </>
       ) : (
         <>
           <Campo
@@ -382,14 +464,43 @@ function TelaEmpresa({
             valor={c.icmsVenda}
             aoMudar={(v) => muda('icmsVenda', v)}
             sufixo="%"
-            dica="Zero quando a substituição tributária já encerrou o ICMS."
+          />
+          <Atalhos
+            titulo="Exemplos de ICMS"
+            opcoes={[
+              { texto: `${REFERENCIAS.icmsSp}% (alíquota geral de SP)`, valor: REFERENCIAS.icmsSp },
+              { texto: '0% (comprei com ICMS-ST)', valor: REFERENCIAS.icmsComSt },
+            ]}
+            aoUsar={(v) => muda('icmsVenda', v)}
+            nota="A alíquota geral muda de estado para estado (em geral de 17% a 22%). Se a mercadoria veio com substituição tributária, o ICMS da venda já foi pago: use 0%."
           />
           <Campo
             rotulo="PIS e Cofins na venda"
             valor={c.pisCofinsVenda}
             aoMudar={(v) => muda('pisCofinsVenda', v)}
             sufixo="%"
-            dica="Valem até 2026; zero no monofásico."
+          />
+          <Atalhos
+            titulo="Exemplo de PIS e Cofins"
+            opcoes={
+              c.regime === 'PRESUMIDO'
+                ? [
+                    {
+                      texto: `${REFERENCIAS.pisCofinsPresumido}% (cumulativo: 0,65% + 3%)`,
+                      valor: REFERENCIAS.pisCofinsPresumido,
+                    },
+                    { texto: '0% (produto monofásico)', valor: '0' },
+                  ]
+                : [
+                    {
+                      texto: `${REFERENCIAS.pisCofinsReal}% (não cumulativo: 1,65% + 7,6%)`,
+                      valor: REFERENCIAS.pisCofinsReal,
+                    },
+                    { texto: '0% (produto monofásico)', valor: '0' },
+                  ]
+            }
+            aoUsar={(v) => muda('pisCofinsVenda', v)}
+            nota="Valem até 2026. De 2027 em diante PIS e Cofins dão lugar à CBS, e o app já calcula assim."
           />
         </>
       )}
@@ -399,8 +510,35 @@ function TelaEmpresa({
         valor={c.despesas}
         aoMudar={(v) => muda('despesas', v)}
         sufixo="%"
-        dica="Comissão, taxa de cartão, frete de venda etc."
+        dica="Tudo o que sai em percentual de cada venda: taxa de cartão (em geral 2% a 5%), comissão, frete de entrega."
       />
+      {c.regime === 'PRESUMIDO' && (
+        <Atalhos
+          titulo="IRPJ e CSLL no Lucro Presumido"
+          opcoes={[
+            {
+              texto: `Somar ${REFERENCIAS.irpjCsllPresumidoComercio}% às despesas`,
+              valor: somar(c.despesas, REFERENCIAS.irpjCsllPresumidoComercio),
+            },
+          ]}
+          aoUsar={(v) => muda('despesas', v)}
+          nota="No Presumido, IRPJ e CSLL são cobrados sobre a receita: no comércio, cerca de 2,28% (IRPJ 15% × 8% + CSLL 9% × 12%), mais se houver o adicional do IRPJ. Inclua nas despesas."
+        />
+      )}
+      {c.regime === 'REAL' && (
+        <Text style={estilos.dica}>
+          No Lucro Real, IRPJ e CSLL incidem sobre o lucro, não sobre cada venda: não entram nas
+          despesas.
+        </Text>
+      )}
+
+      <View style={estilos.avisoContador}>
+        <Text style={estilos.avisoContadorTitulo}>Valores de referência</Text>
+        <Text style={estilos.avisoContadorTexto}>
+          Os exemplos são taxas e percentuais médios, só para começar. O percentual certo da sua
+          empresa depende do faturamento, do produto e do estado: confirme com o seu contador.
+        </Text>
+      </View>
 
       <Opcoes
         rotulo="Margem calculada sobre"
@@ -459,9 +597,9 @@ const estilos = StyleSheet.create({
     borderBottomColor: CORES.borda,
     backgroundColor: CORES.superficie,
   },
-  marca: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  marca: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1, marginRight: 12 },
   simbolo: { width: 32, height: 32 },
-  marcaTexto: { fontSize: 18, color: CORES.tinta },
+  marcaTexto: { fontSize: 17, color: CORES.tinta, flexShrink: 1 },
   negrito: { fontWeight: '800' },
   botaoTopo: {
     paddingHorizontal: 14,
@@ -583,6 +721,34 @@ const estilos = StyleSheet.create({
   opcaoTexto: { color: CORES.tinta },
   opcaoTextoAtiva: { color: CORES.primaria, fontWeight: '800' },
   falta: { color: CORES.erro, fontWeight: '700' },
+  ajuda: {
+    gap: 8,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#eef3f8',
+    borderWidth: 1,
+    borderColor: '#cddbe9',
+  },
+  ajudaTitulo: { fontSize: 15, fontWeight: '800', color: CORES.primaria },
+  ajudaResultado: { fontSize: 16, fontWeight: '800', color: CORES.tinta },
+  atalho: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: CORES.primaria,
+  },
+  atalhoTexto: { color: '#ffffff', fontWeight: '700' },
+  avisoContador: {
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: '#fff7ed',
+    borderWidth: 1,
+    borderColor: '#f2a65a',
+    gap: 4,
+  },
+  avisoContadorTitulo: { color: '#9a3412', fontWeight: '800' },
+  avisoContadorTexto: { color: '#9a3412' },
   botao: {
     backgroundColor: CORES.primaria,
     borderRadius: 999,
