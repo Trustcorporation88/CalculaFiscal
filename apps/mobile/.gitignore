@@ -1,0 +1,8 @@
+
+# Gerados pelo prebuild do Expo (Continuous Native Generation)
+android/
+ios/
+.expo/
+*.keystore
+*.jks
+.env*.local

@@ -7,3 +7,6 @@ prompt-site-precificacao-reforma.md
 apps/web/next-env.d.ts
 packages/regras/src/pacote.gerado.ts
 packages/regras/fontes
+apps/mobile/android
+apps/mobile/ios
+apps/mobile/.expo
