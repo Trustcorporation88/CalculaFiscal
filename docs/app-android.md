@@ -56,6 +56,25 @@ egras\ed25519-privada.pem` (ou na variável `CF_REGRAS_CHAVE_PRIVADA`). Guarde u
 
 O APK é assinado com a chave da empresa. Atualizações precisam ser assinadas com a mesma chave para instalar por cima sem perder a configuração.
 
+## iPhone (versão web)
+
+O iPhone não instala APK. O mesmo app roda no navegador em `https://imposto.trustcorp.com.br/celular`, sem login:
+
+1. Abra o endereço no **Safari**.
+2. Toque em **Compartilhar** e depois em **Adicionar à Tela de Início**. O ícone fica igual ao de um app e abre em tela cheia.
+
+As diferenças em relação ao APK:
+
+- a configuração fica guardada no navegador daquele aparelho;
+- as tabelas são conferidas no próprio site;
+- o botão de compartilhar envia o resultado em texto (WhatsApp e outros), não em imagem.
+
+A versão web é exportada do Expo para `apps/web/public/celular`, que é versionada e servida pelo site. Depois de mudar o app, exporte de novo e inclua o resultado no commit:
+
+```bash
+pnpm --filter @calculafiscal/mobile exportar:web
+```
+
 ## Gerar uma nova versão
 
 Pré-requisitos neste computador: JDK 17 e o Android SDK em `%LOCALAPPDATA%\Android\Sdk`.

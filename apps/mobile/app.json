@@ -17,8 +17,16 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Calculadora Fiscal",
+      "shortName": "Calculadora",
+      "themeColor": "#1f4e79",
+      "backgroundColor": "#fbfaf7"
     },
-    "plugins": ["./plugins/assinatura-release.js", "expo-sharing"]
+    "plugins": ["./plugins/assinatura-release.js", "expo-sharing"],
+    "experiments": {
+      "baseUrl": "/celular"
+    }
   }
 }
