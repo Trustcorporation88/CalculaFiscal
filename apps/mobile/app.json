@@ -2,13 +2,13 @@
   "expo": {
     "name": "Calculadora Fiscal",
     "slug": "calculadora-fiscal",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "android": {
       "package": "br.com.trustcorp.calculadorafiscal",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#1f4e79",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -17,8 +17,16 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Calculadora Fiscal",
+      "shortName": "Calculadora",
+      "themeColor": "#1f4e79",
+      "backgroundColor": "#fbfaf7"
     },
-    "plugins": ["./plugins/assinatura-release.js", "expo-sharing"]
+    "plugins": ["./plugins/assinatura-release.js", "expo-sharing"],
+    "experiments": {
+      "baseUrl": "/celular"
+    }
   }
 }

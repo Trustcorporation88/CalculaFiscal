@@ -35,6 +35,6 @@ export async function proxy(request: NextRequest) {
 // A API /v1 autentica por token de serviço, não por sessão: fica fora do proxy.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/health|monitoramento|v1/|.*\\.(?:svg|png|jpg|ico|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/health|monitoramento|v1/|celular|.*\\.(?:svg|png|jpg|ico|webp)$).*)',
   ],
 };

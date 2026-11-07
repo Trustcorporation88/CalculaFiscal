@@ -1,0 +1,17 @@
+{
+  "name": "Calculadora Fiscal",
+  "short_name": "Calculadora",
+  "start_url": "/celular/",
+  "scope": "/celular/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#1f4e79",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/celular/icone.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

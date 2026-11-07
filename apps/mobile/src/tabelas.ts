@@ -90,10 +90,11 @@ export async function procurarAtualizacao(
   atual: TabelaPublicada,
   buscar: Buscar = fetch as unknown as Buscar,
   agora: () => Date = () => new Date(),
+  site: string = SITE,
 ): Promise<ResultadoBusca> {
   let versao: unknown;
   try {
-    versao = await buscarJson(buscar, `${SITE}/v1/regras/versao`);
+    versao = await buscarJson(buscar, `${site}/v1/regras/versao`);
   } catch {
     return { tipo: 'sem-conexao' };
   }
@@ -103,7 +104,7 @@ export async function procurarAtualizacao(
   }
   let pacote: unknown;
   try {
-    pacote = await buscarJson(buscar, `${SITE}/v1/regras/pacote`);
+    pacote = await buscarJson(buscar, `${site}/v1/regras/pacote`);
   } catch {
     return { tipo: 'sem-conexao' };
   }

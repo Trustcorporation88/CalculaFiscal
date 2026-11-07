@@ -15,6 +15,13 @@ const csp = [
 const config: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ['@calculafiscal/motor-fiscal', '@calculafiscal/regras'],
+  // App do celular na versão web (iPhone): exportado do Expo para public/celular.
+  async rewrites() {
+    return [
+      { source: '/celular', destination: '/celular/index.html' },
+      { source: '/celular/', destination: '/celular/index.html' },
+    ];
+  },
   async headers() {
     return [
       {

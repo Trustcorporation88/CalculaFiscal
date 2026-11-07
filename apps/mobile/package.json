@@ -1,17 +1,20 @@
 {
   "name": "@calculafiscal/mobile",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "main": "index.ts",
   "dependencies": {
     "@calculafiscal/motor-fiscal": "workspace:*",
     "@calculafiscal/regras": "workspace:*",
+    "@expo/metro-runtime": "~58.0.17",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~58.0.23",
     "expo-sharing": "~58.0.22",
     "expo-status-bar": "~58.0.4",
     "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-native": "0.88.1",
-    "react-native-view-shot": "6.1.1"
+    "react-native-view-shot": "6.1.1",
+    "react-native-web": "^0.21.4"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
@@ -22,7 +25,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "exportar:web": "node scripts/exportar-web.mjs"
   },
   "private": true
 }

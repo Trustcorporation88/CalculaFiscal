@@ -107,6 +107,7 @@ function Raiz() {
 
   // Botão "voltar" do Android: da tela Empresa volta ao cálculo; no cálculo, fecha o app.
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     const assinatura = BackHandler.addEventListener('hardwareBackPress', () => {
       if (tela === 'empresa') {
         setTela('calculadora');
@@ -127,7 +128,13 @@ function Raiz() {
   /** Confere no site se há tabela nova. Sem internet, segue com a que está no celular. */
   const procurar = async (atual: EstadoTabelas) => {
     setBusca('buscando');
-    const r = await procurarAtualizacao(atual.tabela);
+    // Na versão web (iPhone), o app é servido pelo próprio site: mesma origem.
+    const r = await procurarAtualizacao(
+      atual.tabela,
+      undefined,
+      undefined,
+      Platform.OS === 'web' ? '' : undefined,
+    );
     if (r.tipo === 'atualizada') {
       setTabelas({ tabela: r.tabela, origem: 'baixada', verificadoEm: r.verificadoEm });
       gravarJson(CHAVE_PACOTE, r.pacote);
@@ -188,8 +195,8 @@ function Raiz() {
       <View style={estilos.abas} accessibilityRole="tablist">
         {(
           [
-            { id: 'calculadora', texto: 'Calcular preço' },
             { id: 'empresa', texto: 'Minha empresa' },
+            { id: 'calculadora', texto: 'Calcular preço' },
           ] as const
         ).map((a) => {
           const ativa = tela === a.id;
@@ -308,6 +315,10 @@ function TelaCalculadora(props: {
     setErroCompartilhar('');
     setCompartilhando(true);
     try {
+      if (Platform.OS === 'web') {
+        await compartilharNaWeb(atual, props);
+        return;
+      }
       if (!(await Sharing.isAvailableAsync())) {
         setErroCompartilhar('Este celular não permite compartilhar arquivos.');
         return;
@@ -395,7 +406,11 @@ function TelaCalculadora(props: {
             accessibilityRole="button"
           >
             <Text style={estilos.botaoTexto}>
-              {compartilhando ? 'Gerando imagem…' : 'Compartilhar no WhatsApp'}
+              {compartilhando
+                ? 'Gerando imagem…'
+                : Platform.OS === 'web'
+                  ? 'Compartilhar (WhatsApp)'
+                  : 'Compartilhar no WhatsApp'}
             </Text>
           </Pressable>
           {erroCompartilhar !== '' && <Text style={estilos.falta}>{erroCompartilhar}</Text>}
@@ -439,6 +454,39 @@ function TelaCalculadora(props: {
       />
     </ScrollView>
   );
+}
+
+/**
+ * No navegador (iPhone), compartilha o resultado em texto pelo menu do sistema (WhatsApp etc.).
+ * Sem menu de compartilhamento, copia o texto.
+ */
+async function compartilharNaWeb(
+  r: ResultadoAnoApp | undefined,
+  p: { config: ConfigEmpresa; custo: string; margem: string; ncm: string },
+) {
+  if (!r || r.situacao !== 'calculado') return;
+  const linhas = [
+    `Calculadora Fiscal: preço de venda em ${r.ano}`,
+    `Preço: ${reais(r.clientePaga)} (sugerido ${reais(r.sugerido)})`,
+    `Impostos no preço: ${reais(r.totalImpostos)} (${porcento(r.pesoImpostos)})`,
+    ...r.impostos.map((i) => `• ${ROTULO_PARTE[i.sigla] ?? i.sigla}: ${reais(i.valor)}`),
+    `Lucro: ${reais(r.lucro)}`,
+    `Custo ${reais(numero(p.custo) ?? '0')} · margem ${p.margem}% · ${ROTULO_REGIME[p.config.regime]}${
+      p.ncm.trim() ? ` · NCM ${p.ncm.trim()}` : ''
+    }`,
+    'Simulação; confirme com o seu contador. imposto.trustcorp.com.br',
+  ];
+  const texto = linhas.join('\n');
+  const nav = globalThis.navigator as Navigator | undefined;
+  if (nav?.share) {
+    try {
+      await nav.share({ text: texto });
+    } catch {
+      // Cancelado pelo usuário.
+    }
+    return;
+  }
+  await nav?.clipboard?.writeText(texto);
 }
 
 const DICA_SELETIVO: Readonly<Record<Seletivo, string>> = {
@@ -848,7 +896,14 @@ const estilos = StyleSheet.create({
   flex: { flex: 1 },
   tela: { flex: 1, backgroundColor: CORES.papel },
   // O Android desenha o app sob a barra de status (edge-to-edge): afasta o conteúdo dela.
-  areaSegura: { paddingTop: Platform.OS === 'android' ? (BarraDeStatus.currentHeight ?? 24) : 44 },
+  areaSegura: {
+    paddingTop:
+      Platform.OS === 'android'
+        ? (BarraDeStatus.currentHeight ?? 24)
+        : Platform.OS === 'web'
+          ? 0
+          : 44,
+  },
   topo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -888,7 +943,8 @@ const estilos = StyleSheet.create({
   titulo: { fontSize: 24, fontWeight: '800', color: CORES.tinta },
   linhaCampos: { flexDirection: 'row', gap: 12 },
   campo: { gap: 6 },
-  campoGrande: { flex: 1 },
+  // minWidth 0: no navegador o campo de texto tem largura mínima e estouraria a linha.
+  campoGrande: { flex: 1, minWidth: 0 },
   rotulo: { fontSize: 14, fontWeight: '700', color: CORES.tinta },
   rotuloClaro: { fontSize: 14, color: '#cfe0f5' },
   entradaLinha: {
@@ -900,7 +956,7 @@ const estilos = StyleSheet.create({
     backgroundColor: CORES.superficie,
     paddingHorizontal: 12,
   },
-  entrada: { flex: 1, fontSize: 18, paddingVertical: 12, color: CORES.tinta },
+  entrada: { flex: 1, minWidth: 0, fontSize: 18, paddingVertical: 12, color: CORES.tinta },
   entradaGrande: { fontSize: 26, fontWeight: '700' },
   sufixo: { fontSize: 16, color: CORES.suave, fontWeight: '700' },
   dica: { fontSize: 12, color: CORES.suave },
