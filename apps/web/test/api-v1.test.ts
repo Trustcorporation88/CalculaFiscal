@@ -41,6 +41,8 @@ describe('contrato (OpenAPI 3.1 gerado do Zod)', () => {
       '/v1/cenarios',
       '/v1/openapi.json',
       '/v1/regras',
+      '/v1/regras/pacote',
+      '/v1/regras/versao',
       '/v1/simulacoes',
     ]);
     expect(doc.components.schemas['Problema']).toBeDefined();
