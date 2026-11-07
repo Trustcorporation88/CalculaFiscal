@@ -17,6 +17,10 @@
     "./tabela": {
       "types": "./dist/tabela.d.ts",
       "default": "./dist/tabela.js"
+    },
+    "./resolver": {
+      "types": "./dist/resolver.d.ts",
+      "default": "./dist/resolver.js"
     }
   },
   "scripts": {
