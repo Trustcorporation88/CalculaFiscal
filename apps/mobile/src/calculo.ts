@@ -11,7 +11,7 @@ import {
   type Status,
 } from '@calculafiscal/motor-fiscal';
 import { resolverPeriodo, type Cenario } from '@calculafiscal/regras/resolver';
-import { tabelaOficial } from '@calculafiscal/regras/tabela';
+import { tabelaOficial, type TabelaDeRegras } from '@calculafiscal/regras/tabela';
 
 /**
  * Cálculo do app: só monta a entrada e chama o motor fiscal (o mesmo do site e da API).
@@ -57,9 +57,12 @@ export const ROTULO_TRATAMENTO: Readonly<Record<Tratamento, string>> = {
 };
 
 export interface Imposto {
-  readonly sigla: 'ICMS' | 'PIS/Cofins' | 'DAS' | 'CBS' | 'IBS';
+  readonly sigla: 'IS' | 'ICMS' | 'PIS/Cofins' | 'DAS' | 'CBS' | 'IBS';
   readonly valor: string;
 }
+
+/** Imposto Seletivo pelo NCM: sem NCM, NCM fora da tabela do IS ou NCM com IS. */
+export type Seletivo = 'sem-ncm' | 'nao-incide' | 'incide';
 
 export type ResultadoAnoApp =
   | {
@@ -68,6 +71,7 @@ export type ResultadoAnoApp =
       readonly situacao: 'calculado';
       /** O que o cliente paga (preço + CBS e IBS destacados). */
       readonly clientePaga: string;
+      /** Custo sem o Imposto Seletivo, que aparece à parte em `impostos`. */
       readonly custo: string;
       readonly impostos: readonly Imposto[];
       readonly totalImpostos: string;
@@ -87,7 +91,12 @@ export type ResultadoAnoApp =
     };
 
 export type Calculo =
-  | { readonly ok: true; readonly anos: readonly ResultadoAnoApp[]; readonly versao: string }
+  | {
+      readonly ok: true;
+      readonly anos: readonly ResultadoAnoApp[];
+      readonly versao: string;
+      readonly seletivo: Seletivo;
+    }
   | { readonly ok: false; readonly erro: string };
 
 /** "1.234,56", "1234,56", "4.89" ou "18%" para "1234.56". Nulo se não for número. */
@@ -95,6 +104,15 @@ export function numero(texto: string): string | null {
   let t = texto.trim().replace(/\s/g, '').replace(/^R\$/, '').replace(/%$/, '');
   if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
   return /^\d{1,9}(\.\d{1,10})?$/.test(t) ? t : null;
+}
+
+/** NCM com 8 dígitos ("2202.10.00" ou "22021000"). Vazio = sem NCM; nulo = inválido. */
+export function ncmValido(texto: string): string | null | '' {
+  const digitos = texto.replace(/[\s.\-]/g, '');
+  if (digitos === '') return '';
+  return /^\d{8}$/.test(digitos)
+    ? `${digitos.slice(0, 4)}.${digitos.slice(4, 6)}.${digitos.slice(6)}`
+    : null;
 }
 
 const fracao = (texto: string): string | null => {
@@ -122,6 +140,8 @@ export function pendenciasConfig(c: ConfigEmpresa): string[] {
  * a empresa recupera). No regime regular, a CBS/IBS da compra vira crédito, então o preço do
  * fornecedor é o próprio custo. No Simples (DAS) não há crédito: o preço do fornecedor é o que,
  * com a CBS/IBS destacada, fecha o custo informado.
+ * O custo informado é o de hoje, sem Imposto Seletivo: a partir de 2027 o IS do fabricante ou
+ * importador chega embutido no preço da compra e soma ao custo (o motor nunca o credita).
  */
 function fornecimentoDoAno(custo: string, regime: RegimeApp, p: ParametrosAno): Fornecimento {
   const semPreco: Omit<Fornecimento, 'precoLiquido'> = {
@@ -132,11 +152,18 @@ function fornecimentoDoAno(custo: string, regime: RegimeApp, p: ParametrosAno): 
     freteEDespesas: '0',
   };
   const precoLiquido =
-    regime === 'SIMPLES_DAS' ? precoLiquidoPelaNota(semPreco, custo, p).precoLiquido : custo;
+    regime === 'SIMPLES_DAS'
+      ? precoLiquidoPelaNota(semPreco, custo, { ...p, aliquotaIs: '0' }).precoLiquido
+      : custo;
   return { ...semPreco, precoLiquido };
 }
 
-export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto: string): Calculo {
+export function calcular(
+  config: ConfigEmpresa,
+  custoTexto: string,
+  margemTexto: string,
+  opcoes: { readonly ncm?: string; readonly tabela?: TabelaDeRegras } = {},
+): Calculo {
   const faltas = pendenciasConfig(config);
   if (faltas.length > 0) return { ok: false, erro: `Configure a empresa: ${faltas.join(', ')}.` };
   const custo = numero(custoTexto);
@@ -144,6 +171,8 @@ export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto:
     return { ok: false, erro: 'Informe o custo do produto.' };
   const margem = fracao(margemTexto);
   if (margem === null) return { ok: false, erro: 'Informe a margem (menor que 100%).' };
+  const ncm = ncmValido(opcoes.ncm ?? '');
+  if (ncm === null) return { ok: false, erro: 'O NCM tem 8 dígitos (ex.: 2202.10.00).' };
 
   const simples = config.regime === 'SIMPLES_DAS';
   const perfil: PerfilVenda = {
@@ -160,11 +189,18 @@ export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto:
   };
 
   try {
-    const tabela = tabelaOficial();
+    const tabela = opcoes.tabela ?? tabelaOficial();
     const parametros = resolverPeriodo(tabela.regras, {
       cenario: config.cenario,
       cClassTrib: config.tratamento,
+      ...(ncm ? { ncm } : {}),
     });
+    // Cenário sem IS ("MP caducada") também cai aqui: a tabela não cobra IS deste NCM.
+    const seletivo: Seletivo = !ncm
+      ? 'sem-ncm'
+      : parametros.some((p) => new D(p.aliquotaIs).gt(0))
+        ? 'incide'
+        : 'nao-incide';
     const anos = parametros.map((p): ResultadoAnoApp => {
       const r = precificarAno(
         { fornecimento: fornecimentoDoAno(custo, config.regime, p), perfil },
@@ -176,6 +212,7 @@ export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto:
       const v = r.valores;
       const impostos = (
         [
+          ['IS', v.isCompra],
           ['ICMS', v.icms],
           ['PIS/Cofins', v.pisCofins],
           ['DAS', v.das],
@@ -191,7 +228,7 @@ export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto:
         status: r.status,
         situacao: 'calculado',
         clientePaga: v.precoComTributo,
-        custo: v.custoLiquido,
+        custo: new D(v.custoLiquido).minus(v.isCompra).toFixed(2),
         impostos,
         totalImpostos: total.toFixed(2),
         pesoImpostos: total.div(v.precoComTributo).toFixed(4),
@@ -202,7 +239,12 @@ export function calcular(config: ConfigEmpresa, custoTexto: string, margemTexto:
         sugerido: precoPsicologico(v.precoComTributo),
       };
     });
-    return { ok: true, anos, versao: `regras ${tabela.versao} · motor ${VERSAO_MOTOR}` };
+    return {
+      ok: true,
+      anos,
+      versao: `regras ${tabela.versao} · motor ${VERSAO_MOTOR}`,
+      seletivo,
+    };
   } catch (e) {
     return { ok: false, erro: e instanceof RangeError ? e.message : 'Não foi possível calcular.' };
   }

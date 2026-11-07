@@ -1,10 +1,10 @@
 # App Android: Calculadora Fiscal
 
-App interno e simplificado: você digita o **custo** e a **margem**, escolhe o ano (2026 a 2033) e vê o **preço de venda** com os **impostos destacados**. Funciona sem internet. Não tem login, analytics nem coleta de dados, e nada do que é digitado sai do celular.
+App interno e simplificado: você digita o **custo** e a **margem**, escolhe o ano (2026 a 2033) e vê o **preço de venda** com os **impostos destacados**. Funciona sem internet. Não tem login, analytics nem coleta de dados, e nada do que é digitado sai do celular. A única conexão do app é a consulta às tabelas de alíquotas no site, que não envia nenhum dado.
 
 ## Como calcula
 
-O app não tem fórmula própria: usa os pacotes `motor-fiscal` e `regras` do monorepo, os mesmos do site e da API. As tabelas de regras vão embutidas no APK, e o rodapé da linha do tempo mostra a versão delas e a do motor.
+O app não tem fórmula própria: usa os pacotes `motor-fiscal` e `regras` do monorepo, os mesmos do site e da API. As tabelas de regras vão embutidas no APK e podem ser atualizadas pelo site (veja abaixo). O rodapé da linha do tempo mostra a versão delas e a do motor.
 
 - **Custo:** é o custo líquido do produto, já sem o imposto que a empresa recupera na compra.
   - No regime regular, a CBS e o IBS da compra viram crédito.
@@ -15,8 +15,38 @@ O app não tem fórmula própria: usa os pacotes `motor-fiscal` e `regras` do mo
   - a barra de composição (custo, cada imposto, despesas e lucro);
   - o total de impostos no preço e as duas margens;
   - o status das premissas do ano.
+- **Imposto Seletivo (NCM opcional):** com o NCM de bebida açucarada (2202.10.00, 2,6%), cerveja (22.03, 4,2%) ou fumo, o IS entra a partir de fevereiro de 2027. Ele é cobrado do fabricante ou importador sobre o preço líquido dele e chega embutido no custo da compra, sem crédito. O app mostra o IS em linha própria. De 2028 em diante ainda não há lei: repete 2027 como estimativa. No cenário "MP caducada" não há IS.
+- **Compartilhar:** o botão verde tira uma foto do cartão do resultado (com custo, margem, regime e NCM) e abre o menu do Android: WhatsApp, e-mail e outros.
 
-Ficam de fora desta versão simplificada: o Imposto Seletivo (que depende do NCM), o Simples no regime regular, o ICMS-ST e a nota completa. Para esses casos, use a calculadora do site.
+Ficam de fora desta versão simplificada: o Simples no regime regular, o ICMS-ST, o IS de quem fabrica (o app considera quem revende) e a nota completa. Para esses casos, use a calculadora do site.
+
+## Tabelas atualizadas sem reinstalar
+
+Ao abrir, o app pergunta ao site qual é a versão das tabelas (`GET /v1/regras/versao`). Se for outra, baixa o pacote (`GET /v1/regras/pacote`) e só passa a usá-lo depois de três conferências:
+
+1. **Assinatura Ed25519:** o pacote é assinado com uma chave privada que fica só no computador de quem publica, nunca no servidor. A chave pública vai embutida no app. Quem invadisse o servidor não conseguiria publicar alíquotas que o app aceitasse.
+2. **Validação:** as regras passam no mesmo schema do site e o motor resolve 2026 a 2033 com elas.
+3. **Sem volta:** um pacote mais antigo que o que está no celular é recusado.
+
+Sem internet, ou se algo falhar, o app segue com as tabelas que já tem. O cartão "Tabelas de alíquotas", no fim da tela, mostra a versão, a data de publicação e a última conferência, e tem o botão **Procurar atualização**. Depois de 30 dias sem conseguir conferir, o app avisa no topo da tela.
+
+As rotas são públicas, sem token, com limite de 30 requisições por minuto por endereço.
+
+### Publicar tabelas novas
+
+Depois de mudar qualquer arquivo em `packages/regras/dados/`, assine o pacote **neste computador** e versione o resultado:
+
+```bash
+pnpm --filter @calculafiscal/regras assinar
+```
+
+- O comando grava `packages/regras/src/pacote-assinado.ts` e `chave-publica.ts`. Os dois entram no commit.
+- O teste `assinatura.test.ts` falha no CI enquanto o pacote não for assinado de novo.
+- O app recebe as tabelas novas quando a versão do site com esse commit for publicada.
+- A chave privada fica em `%USERPROFILE%\.calculafiscal
+egras\ed25519-privada.pem` (ou na variável `CF_REGRAS_CHAVE_PRIVADA`). Guarde uma cópia em local seguro.
+  - Sem ela, os apps instalados não aceitam tabelas novas até receberem uma versão com outra chave pública.
+  - Se ela vazar, gere outra (`node scripts/assinar-pacote.mjs --nova-chave`, depois de apagar a antiga) e distribua um APK novo.
 
 ## Instalar no celular
 
@@ -60,4 +90,4 @@ cd apps\mobile\android; .\gradlew.bat assembleRelease
 
 4. O APK sai em `apps/mobile/android/app/build/outputs/apk/release/app-release.apk`.
 
-Pelo prompt original, o próximo passo é publicar cada versão como release privada no GitHub e atualizar as tabelas sem reinstalar (pacote de regras assinado, `GET /v1/regras/pacote`).
+Pelo prompt original, ainda falta publicar cada versão como release privada no GitHub.

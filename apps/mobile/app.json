@@ -2,13 +2,13 @@
   "expo": {
     "name": "Calculadora Fiscal",
     "slug": "calculadora-fiscal",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "android": {
       "package": "br.com.trustcorp.calculadorafiscal",
-      "versionCode": 1,
+      "versionCode": 3,
       "adaptiveIcon": {
         "backgroundColor": "#1f4e79",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -19,6 +19,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["./plugins/assinatura-release.js"]
+    "plugins": ["./plugins/assinatura-release.js", "expo-sharing"]
   }
 }

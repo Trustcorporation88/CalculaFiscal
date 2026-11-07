@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calcular,
   CONFIG_INICIAL,
+  ncmValido,
   numero,
   pendenciasConfig,
   type ConfigEmpresa,
@@ -65,5 +66,51 @@ describe('cálculo do app (mesmo motor do site)', () => {
   it('recusa custo vazio e margem de 100% ou mais', () => {
     expect(calcular(SIMPLES, '', '25')).toMatchObject({ ok: false });
     expect(calcular(SIMPLES, '4,89', '100')).toMatchObject({ ok: false });
+  });
+
+  it('lê o NCM com ou sem pontos e recusa tamanho errado', () => {
+    expect(ncmValido('22021000')).toBe('2202.10.00');
+    expect(ncmValido(' 2203.00.00 ')).toBe('2203.00.00');
+    expect(ncmValido('')).toBe('');
+    expect(ncmValido('2202')).toBeNull();
+    expect(calcular(REAL, '4,89', '25', { ncm: '2202' })).toMatchObject({ ok: false });
+  });
+
+  it('Imposto Seletivo: refrigerante (2202.10.00, 2,6%) a partir de 2027, embutido no custo', () => {
+    const r = calcular(REAL, '4,89', '25', { ncm: '2202.10.00' });
+    if (!r.ok) throw new Error(r.erro);
+    expect(r.seletivo).toBe('incide');
+    expect(ano(r, 2026).impostos.find((i) => i.sigla === 'IS')).toBeUndefined();
+    const a2027 = ano(r, 2027);
+    // 4,89 × 2,6% = 0,127 → R$ 0,13, cobrado do fabricante e repassado no preço da compra.
+    expect(a2027.impostos[0]).toEqual({ sigla: 'IS', valor: '0.13' });
+    expect(a2027.custo).toBe('4.89');
+    // O preço sobe em relação ao mesmo produto sem IS.
+    const sem = ano(calcular(REAL, '4,89', '25'), 2027);
+    expect(Number(a2027.clientePaga)).toBeGreaterThan(Number(sem.clientePaga));
+    // 2028 em diante ainda não tem lei: repete 2027 como estimativa.
+    expect(ano(r, 2030).status).toBe('ESTIMATIVA');
+    expect(ano(r, 2030).impostos[0]).toEqual({ sigla: 'IS', valor: '0.13' });
+  });
+
+  it('Imposto Seletivo: cerveja (2203.00.00, 4,2%) também no Simples', () => {
+    const r = calcular(SIMPLES, '4,89', '25', { ncm: '22030000' });
+    const a2027 = ano(r, 2027);
+    // No Simples não há crédito: o preço líquido do fornecedor é o custo sem a CBS/IBS da nota
+    // (cerca de R$ 4,30), e o IS de 4,2% incide sobre ele: R$ 0,18.
+    expect(a2027.impostos[0]).toEqual({ sigla: 'IS', valor: '0.18' });
+    expect(Number(a2027.custo)).toBeGreaterThanOrEqual(4.89);
+  });
+
+  it('NCM sem Imposto Seletivo e cenário sem IS não cobram nada', () => {
+    const arroz = calcular(REAL, '22,50', '25', { ncm: '1006.30.21' });
+    if (!arroz.ok) throw new Error(arroz.erro);
+    expect(arroz.seletivo).toBe('nao-incide');
+    const semIs = calcular({ ...REAL, cenario: 'mp-caducada' }, '4,89', '25', {
+      ncm: '2202.10.00',
+    });
+    if (!semIs.ok) throw new Error(semIs.erro);
+    expect(semIs.seletivo).toBe('nao-incide');
+    expect(ano(semIs, 2027).impostos.map((i) => i.sigla)).not.toContain('IS');
   });
 });

@@ -10,3 +10,5 @@ packages/regras/fontes
 apps/mobile/android
 apps/mobile/ios
 apps/mobile/.expo
+packages/regras/src/pacote-assinado.ts
+packages/regras/src/chave-publica.ts

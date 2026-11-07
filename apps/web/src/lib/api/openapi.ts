@@ -12,6 +12,7 @@ import {
 } from './contrato';
 import { LIMITE_POR_MINUTO } from './autenticacao';
 import { PROBLEMAS } from './problema';
+import { LIMITE_PUBLICO_POR_MINUTO } from './publica';
 
 type Esquema = Record<string, unknown>;
 
@@ -141,6 +142,32 @@ export function documentoOpenApi(): Esquema {
               content: { 'application/json': { schema: esquema(RespostaRegrasV1) } },
             },
             ...respostasDeErro(['corpo-invalido', ...ERROS_COMUNS]),
+          },
+        },
+      },
+      '/v1/regras/versao': {
+        get: {
+          operationId: 'versaoDoPacote',
+          summary: 'Versão e data do pacote de regras assinado',
+          description: `Público, sem token. Limite: ${LIMITE_PUBLICO_POR_MINUTO} requisições por minuto por endereço.`,
+          security: [],
+          responses: {
+            '200': { description: 'versao, publicadoEm, formato, chave, tamanhoBytes e pacote.' },
+            ...respostasDeErro(['limite-excedido']),
+          },
+        },
+      },
+      '/v1/regras/pacote': {
+        get: {
+          operationId: 'pacoteDeRegras',
+          summary: 'Pacote de regras assinado com Ed25519 (usado pelo app)',
+          description:
+            'Público, sem token. A assinatura cobre os bytes UTF-8 do campo conteudo e confere com a chave pública embutida no app. Aceita If-None-Match (ETag = versão).',
+          security: [],
+          responses: {
+            '200': { description: 'versao, publicadoEm, chave, assinatura e conteudo.' },
+            '304': { description: 'O app já tem esta versão.' },
+            ...respostasDeErro(['limite-excedido']),
           },
         },
       },
