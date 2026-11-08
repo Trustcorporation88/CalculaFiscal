@@ -14,7 +14,7 @@ export function CabecalhoPublico() {
         <nav className={s.links} aria-label="Principal">
           <LinkFuncionalidades className={s.sempre}>Funcionalidades</LinkFuncionalidades>
           <Link href="/#caso">O caso</Link>
-          <Link href="/#api">API</Link>
+          <Link href="/celular">App no celular</Link>
           <Link href="/entrar" className={s.entrar}>
             Entrar
           </Link>
@@ -36,7 +36,6 @@ export function RodapePublico() {
         <nav className={s.linksRodape} aria-label="Rodapé">
           <LinkFuncionalidades>Funcionalidades</LinkFuncionalidades>
           <Link href="/#caso">O caso</Link>
-          <a href="/v1/openapi.json">API</a>
           <Link href="/entrar">Entrar</Link>
           <Link href="/cadastro">Criar conta</Link>
         </nav>
