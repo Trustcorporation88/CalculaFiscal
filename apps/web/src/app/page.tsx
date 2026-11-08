@@ -95,9 +95,9 @@ const RECURSOS = [
     icone: 'M5 4h14v16H5zM5 9h14M10 9v11',
   },
   {
-    titulo: 'API para o seu sistema',
-    texto: 'O mesmo cálculo da tela, com contrato OpenAPI, tokens por organização e limites.',
-    icone: 'M8 8l-4 4 4 4M16 8l4 4-4 4M13 6l-2 12',
+    titulo: 'App no celular',
+    texto: 'Android e iPhone: digite o custo e a margem e veja o preço com os impostos destacados.',
+    icone: 'M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2',
   },
 ];
 
@@ -291,35 +291,6 @@ export default function Inicio() {
               <SeloStatus status="ESTIMATIVA" />
               <p>Sem norma ainda: valor estimado e sinalizado como tal.</p>
             </div>
-          </div>
-        </section>
-
-        <section id="api" className={s.fundoEscuro}>
-          <div className={`${s.faixa} ${s.secao} ${s.api}`}>
-            <div>
-              <p className={s.sobretitulo}>API</p>
-              <h2>Integre o cálculo ao seu sistema</h2>
-              <p>
-                Tokens de serviço por organização, valores em texto decimal, erros em português e a
-                versão do motor e das regras em toda resposta.
-              </p>
-              <a href="/v1/openapi.json" className={s.secundario}>
-                Ver o contrato OpenAPI
-              </a>
-            </div>
-            <pre className={s.codigo}>
-              <code>{`POST /v1/simulacoes
-Authorization: Bearer cf_live_…
-
-{
-  "venda": { "regime": "SIMPLES_DAS",
-             "aliquotaDas": "0.08",
-             "despesasVariaveis": "0.06",
-             "margem": "0.25" },
-  "itens": [{ "ncm": "2202.10.00",
-              "compra": { "totalNota": "4.89", … } }]
-}`}</code>
-            </pre>
           </div>
         </section>
 
