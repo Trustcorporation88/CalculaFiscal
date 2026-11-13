@@ -54,8 +54,8 @@ importers:
         specifier: 0.88.1
         version: 0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0)
       react-native-view-shot:
-        specifier: 6.1.1
-        version: 6.1.1(react-native@0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
+        specifier: 6.2.1
+        version: 6.2.1(react-native@0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)
       react-native-web:
         specifier: ^0.21.4
         version: 0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -3141,8 +3141,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
-  react-native-view-shot@6.1.1:
-    resolution: {integrity: sha512-eMoNXNgADlcMT5mbquHqueE55bUuJA6vpUj650ZiresuorgdRrhDCfaxI2QGL6TN1UT+76EgQMjDO6Vx/H0ZLA==}
+  react-native-view-shot@6.2.1:
+    resolution: {integrity: sha512-gsvR347Rr1avrF5Gki14VQPn7jJBbaEp2ast8EWAWnJvfTSQWoR/ZrQ3cksACNpwGRjC5ysQKxyj0Zrnid6WMg==}
     engines: {node: '>=20.19.4', npm: '>=10'}
     peerDependencies:
       html2canvas-pro: ^2.0.0
@@ -6974,7 +6974,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-native-view-shot@6.1.1(react-native@0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
+  react-native-view-shot@6.2.1(react-native@0.88.1(@babel/core@7.29.13)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0):
     dependencies:
       react: 19.3.0
     optionalDependencies:
