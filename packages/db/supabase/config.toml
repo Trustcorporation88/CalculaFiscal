@@ -440,7 +440,7 @@ project_id = "qgwqnxkcyhgmlwuirlnc"
 
 [remotes.production.auth]
 site_url = "https://imposto.trustcorp.com.br"
-additional_redirect_urls = ["https://imposto.trustcorp.com.br/auth/callback"]
+additional_redirect_urls = ["https://imposto.trustcorp.com.br/auth/callback", "https://web-production-399be236.up.railway.app/auth/callback"]
 
 # Modelos de e-mail com token_hash: o link funciona mesmo aberto em outro aparelho ou navegador
 # (o fluxo PKCE padrão exige o mesmo navegador em que o cadastro foi feito).

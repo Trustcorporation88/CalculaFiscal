@@ -2,10 +2,10 @@
 
 A API faz o mesmo cálculo da tela, porque usa as mesmas funções. O contrato é o documento OpenAPI 3.1 em `GET /v1/openapi.json`, gerado dos schemas Zod em `apps/web/src/lib/api/contrato.ts`. Os testes de contrato conferem que as respostas reais batem com ele.
 
-| Ambiente          | Endereço                                | Token         |
-| ----------------- | --------------------------------------- | ------------- |
-| Sandbox (staging) | https://web-staging-50d4.up.railway.app | `cf_test_...` |
-| Produção          | a definir                               | `cf_live_...` |
+| Ambiente          | Endereço                                                                             | Token         |
+| ----------------- | ------------------------------------------------------------------------------------ | ------------- |
+| Sandbox (staging) | https://web-staging-50d4.up.railway.app                                              | `cf_test_...` |
+| Produção          | https://imposto.trustcorp.com.br (ou https://web-production-399be236.up.railway.app) | `cf_live_...` |
 
 ## Autenticação
 
@@ -17,12 +17,15 @@ A revogação vale na hora: a próxima requisição com o token já é recusada.
 
 ## Rotas
 
-| Método e caminho       | Escopo     | O que faz                                                                                                                        |
-| ---------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/simulacoes`  | simular    | Simulação síncrona de até 20 itens: linha do tempo de 2026 a 2033, preço psicológico, cenários, comparativo e memória de cálculo |
-| `GET /v1/regras`       | regras:ler | Regras vigentes numa data, com fonte e status. Filtros: `data`, `tributo`, `ncm`, `cClassTrib`                                   |
-| `GET /v1/cenarios`     | regras:ler | Cenários e premissas                                                                                                             |
-| `GET /v1/openapi.json` | sem token  | O contrato                                                                                                                       |
+| Método e caminho        | Escopo     | O que faz                                                                                                                        |
+| ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/simulacoes`   | simular    | Simulação síncrona de até 20 itens: linha do tempo de 2026 a 2033, preço psicológico, cenários, comparativo e memória de cálculo |
+| `GET /v1/regras`        | regras:ler | Regras vigentes numa data, com fonte e status. Filtros: `data`, `tributo`, `ncm`, `cClassTrib`                                   |
+| `GET /v1/classificacao` | regras:ler | Sugestão de `CST` e `cClassTrib` por `ncm` ou `nbs`, grau de confiança, enquadramento no IS e crítica contra os anexos da LC 214 |
+| `GET /v1/cenarios`      | regras:ler | Cenários e premissas                                                                                                             |
+| `GET /v1/regras/versao` | sem token  | Versão e metadados do pacote de regras assinado                                                                                  |
+| `GET /v1/regras/pacote` | sem token  | Pacote de regras assinado com Ed25519 (ETag = versão)                                                                            |
+| `GET /v1/openapi.json`  | sem token  | O contrato                                                                                                                       |
 
 ## Convenções
 
@@ -55,6 +58,6 @@ Os erros seguem a RFC 9457 (`application/problem+json`), com `codigo` estável e
 
 ## Ainda não disponível
 
-`POST /v1/simulacoes/lote`, `GET /v1/jobs/{id}`, webhooks, `POST/PUT /v1/empresas`, `GET /v1/classificacao` (depende das listas de NCM dos anexos da LC 214), `Idempotency-Key` persistida e o SDK TypeScript publicado.
+`POST /v1/simulacoes/lote`, `GET /v1/jobs/{id}`, webhooks, `POST/PUT /v1/empresas`, `Idempotency-Key` persistida e o SDK TypeScript publicado.
 
 Exemplos prontos para o VS Code (extensão REST Client) ou JetBrains estão em [exemplos.http](exemplos.http).
