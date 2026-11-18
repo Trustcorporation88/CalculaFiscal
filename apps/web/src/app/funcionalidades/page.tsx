@@ -6,6 +6,7 @@ import {
   DESCRICAO_CENARIOS,
   tabelaOficial,
   tratamentosDisponiveis,
+  tratamentosServicoDisponiveis,
 } from '@calculafiscal/regras';
 import { SeloStatus } from '@/components/calculadora/selo-status';
 import { CabecalhoPublico, RodapePublico } from '@/components/publico/estrutura';
@@ -74,6 +75,7 @@ function Bloco({
 
 export default function Funcionalidades() {
   const tratamentos = tratamentosDisponiveis(tabelaOficial().regras);
+  const tratamentosServico = tratamentosServicoDisponiveis();
   const zero = tratamentos.filter((t) => t.reducao === '1');
   const sessenta = tratamentos.filter((t) => t.reducao !== '1');
 
@@ -103,13 +105,13 @@ export default function Funcionalidades() {
           <Bloco
             id="calculadora"
             numero={1}
-            titulo="Calculadora de preço, 2026 a 2033"
-            resumo="O preço que mantém a sua margem em cada ano da transição, para um produto."
+            titulo="Calculadora de preço, 2026 a 2033 (mercadorias e serviços)"
+            resumo="O preço que mantém a sua margem em cada ano da transição, para uma mercadoria ou prestação de serviço."
             naTela={
               <ul className={s.listaTela}>
-                <li>Nota de compra e custo líquido de cada ano</li>
-                <li>Preço de venda e o que o cliente paga</li>
-                <li>ICMS, PIS/Cofins ou DAS, CBS e IBS da venda</li>
+                <li>Nota de compra (ou XML da NF-e) e custo líquido de cada ano</li>
+                <li>Comparativo: fornecedor mantendo preço líquido x preço bruto</li>
+                <li>ICMS, ISS, PIS/Cofins ou DAS, CBS e IBS da venda</li>
                 <li>Crédito que o seu cliente aproveita</li>
                 <li>Lucro e as duas margens</li>
               </ul>
@@ -118,29 +120,32 @@ export default function Funcionalidades() {
             <h3>O que você informa</h3>
             <ol className={s.passos}>
               <li>
-                <strong>Produto:</strong> descrição, NCM (necessário para o Imposto Seletivo) e o
-                tratamento de CBS/IBS, quando houver redução.
+                <strong>Mercadoria ou serviço:</strong> escolha entre mercadoria (com NCM e
+                importação opcional do XML da NF-e de compra) ou prestação de serviço (transição do
+                ISS até 2033, NBS e distinção entre folha salarial sem crédito e insumos tributados
+                com crédito).
               </li>
               <li>
-                <strong>Compra de hoje (2026):</strong> o total da nota por unidade e as alíquotas
-                do fornecedor: ICMS, IPI, PIS/Cofins e, se houver, ICMS-ST (MVA e alíquota interna).
+                <strong>Compra ou custos de hoje (2026):</strong> na mercadoria, o total da nota por
+                unidade (ou XML da NF-e) com ICMS, IPI, PIS/Cofins e ICMS-ST; no serviço, o custo
+                direto e a parcela vinda de insumos no regime regular.
               </li>
               <li>
-                <strong>Venda:</strong> o regime (Simples no DAS ou no regime regular, Presumido ou
-                Real), os tributos da saída, as despesas variáveis e a margem desejada.
+                <strong>Premissa do fornecedor:</strong> compare o fornecedor que repassa a extinção
+                de PIS/Cofins e IPI (mantém o preço líquido) com o que não repassa (mantém o preço
+                bruto). O resultado já traz o comparativo imediato entre os dois modos.
               </li>
               <li>
-                <strong>Base da margem:</strong> sobre o preço com tributo (o que o cliente paga) ou
-                sobre a receita líquida. As duas margens aparecem sempre.
+                <strong>Venda e margem:</strong> o regime (Simples no DAS ou no regime regular,
+                Presumido ou Real), os tributos da saída (ICMS ou ISS), as despesas variáveis, a
+                margem desejada e a base da margem (as duas bases aparecem sempre).
               </li>
             </ol>
             <p>
-              A partir da nota, a calculadora encontra o preço líquido do fornecedor e o mantém nos
-              anos seguintes. Essa premissa e a faixa de valores que fecham a mesma nota aparecem
-              junto do resultado.
-            </p>
-            <p>
-              <Link href="/app/calculadora?exemplo=coca">Abrir a calculadora com o exemplo</Link>{' '}
+              <Link href="/app/calculadora?exemplo=coca">Exemplo da Coca-Cola</Link> ·{' '}
+              <Link href="/app/calculadora?exemplo=servico">
+                Exemplo de serviço contábil (redução de 30%)
+              </Link>{' '}
               (exige login).
             </p>
           </Bloco>
@@ -302,30 +307,36 @@ export default function Funcionalidades() {
           <Bloco
             id="lote"
             numero={8}
-            titulo="Simulação em lote"
-            resumo="Uma planilha com até 500 produtos, com o mesmo perfil de venda."
+            titulo="Simulação em lote (planilhas e XMLs de NF-e)"
+            resumo="Até 500 itens por lote, a partir de planilha (.xlsx/.csv) ou de múltiplos XMLs de NF-e de compra."
             naTela={
               <ul className={s.listaTela}>
+                <li>Upload de .xlsx, .csv ou múltiplos .xml de NF-e</li>
                 <li>O que o cliente paga em 2026, 2027, 2029 e 2033</li>
-                <li>Preço psicológico de cada ano</li>
-                <li>Status de cada ano</li>
-                <li>Erros explicados por linha</li>
+                <li>Preço psicológico e status de cada ano</li>
+                <li>Alertas fiscais do XML (ICMS60, PISNT) e erros por linha</li>
               </ul>
             }
           >
             <ol className={s.passos}>
-              <li>Baixe o modelo (.xlsx) na tela de lote.</li>
               <li>
-                Preencha uma linha por produto: descrição, NCM, cClassTrib, total da nota e as
-                alíquotas do fornecedor. Percentuais em número: 18 para 18%.
+                <strong>Por XML da NF-e:</strong> selecione um ou vários arquivos <code>.xml</code>{' '}
+                de notas de compra; cada item <code>&lt;det&gt;</code> (incluindo o{' '}
+                <code>cClassTrib</code> de 2026 quando presente) vira uma linha do lote.
               </li>
-              <li>Envie o arquivo (.xlsx ou .csv) e escolha o regime, a margem e o cenário.</li>
-              <li>Baixe o resultado em Excel, com todos os anos de 2026 a 2033.</li>
+              <li>
+                <strong>Por planilha:</strong> baixe o modelo (<code>.xlsx</code>), preencha uma
+                linha por produto (percentuais em número: 18 para 18%) e envie <code>.xlsx</code> ou{' '}
+                <code>.csv</code>.
+              </li>
+              <li>
+                Escolha o regime, a margem, o cenário e a premissa do fornecedor (preço líquido ou
+                preço bruto) e baixe o resultado completo em Excel.
+              </li>
             </ol>
             <p>
-              A planilha é lida no seu navegador; só os valores das colunas do modelo vão para o
-              cálculo. Uma linha com erro não para as outras, e a célula formatada como % no Excel é
-              apontada em vez de adivinhada.
+              Planilhas e XMLs são lidos no seu navegador (com bloqueio contra entidades externas e
+              limite de 5 MB por arquivo); apenas os campos fiscais extraídos vão para o cálculo.
             </p>
           </Bloco>
 
@@ -401,19 +412,19 @@ export default function Funcionalidades() {
           >
             <ul className={s.marcadores}>
               <li>
-                Simples Nacional no regime regular: depende da partilha do DAS por anexo, ainda não
-                definida pelo CGSN (na calculadora oficial da Receita Federal, os percentuais
-                efetivos pIBSSN e pCBSSN são informados pelo contribuinte).
+                Partilha automática do DAS por anexo no Simples Nacional: aguarda definição nas
+                Resoluções CGSN (na calculadora oficial da Receita Federal, os percentuais efetivos
+                pIBSSN e pCBSSN são informados pelo contribuinte; no site e na API você já pode
+                informar essa proporção manualmente quando quiser simular).
               </li>
               <li>
-                Reduções que dependem de quem compra (administração pública, produtor rural, Zona
-                Franca de Manaus).
+                Reduções condicionadas a quem compra (administração pública, produtor rural não
+                contribuinte e Zona Franca de Manaus).
               </li>
               <li>
-                Serviços (transição do ISS, embora a classificação por NBS já possa ser consultada
-                na API) e regimes específicos, como combustíveis e imóveis.
+                Regimes específicos (combustíveis monofásicos, serviços financeiros, imóveis, bares
+                e hotelaria).
               </li>
-              <li>Importação de XML da NF-e e cenário em que o fornecedor mantém o preço bruto.</li>
             </ul>
           </Bloco>
         </div>
