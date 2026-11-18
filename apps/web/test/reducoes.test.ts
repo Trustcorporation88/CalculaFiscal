@@ -41,6 +41,8 @@ describe('tratamento de CBS e IBS (cClassTrib) na calculadora', () => {
     expect(r.entrada.cClassTrib).toBe('000001');
     expect(r.tratamento).toBeNull();
     expect(avisoTratamento(r.tratamento)).toMatch(/Tributação integral/);
+    expect(avisoTratamento(r.tratamento, '1006.30.21')).toMatch(/200003.*alíquota zero.*Anexo I/);
+    expect(avisoTratamento(r.tratamento, '2202.10.00')).toMatch(/não consta nos anexos/);
     const a2033 = r.anos.find((a) => a.ano === 2033);
     expect(a2033?.situacao === 'CALCULADO' && Number(a2033.valores.cbs)).toBeGreaterThan(0);
   });
@@ -50,6 +52,8 @@ describe('tratamento de CBS e IBS (cClassTrib) na calculadora', () => {
     const cesta = calcularLinhaDoTempo(entrada({ ...ARROZ, cClassTrib: '200003' }), tabela);
     expect(cesta.tratamento).toMatchObject({ codigo: '200003', reducao: '1' });
     expect(avisoTratamento(cesta.tratamento)).toMatch(/alíquota zero/);
+    expect(avisoTratamento(cesta.tratamento, '1006.30.21')).toMatch(/Conferência oficial.*Anexo I/);
+    expect(avisoTratamento(cesta.tratamento, '2202.10.00')).toMatch(/REG-011/);
     for (const ano of [2027, 2030, 2033]) {
       const c = cesta.anos.find((a) => a.ano === ano);
       const i = integral.anos.find((a) => a.ano === ano);

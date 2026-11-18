@@ -35,10 +35,10 @@ Na produção, o mesmo fluxo com `--project-ref qgwqnxkcyhgmlwuirlnc` e um novo 
 | web     | `pnpm turbo run build --filter=@calculafiscal/web...`    | `pnpm --filter @calculafiscal/web start` (Next lê `PORT`) | `/api/health` |
 | worker  | `pnpm turbo run build --filter=@calculafiscal/worker...` | `pnpm --filter @calculafiscal/worker start`               | `/health`     |
 
-| Ambiente | Endereço                                | Origem do deploy                     |
-| -------- | --------------------------------------- | ------------------------------------ |
-| Staging  | https://web-staging-50d4.up.railway.app | segue a `main` (deploy a cada merge) |
-| Produção | https://imposto.trustcorp.com.br        | **fixada num commit** (ver abaixo)   |
+| Ambiente | Endereço                                                                                   | Origem do deploy                     |
+| -------- | ------------------------------------------------------------------------------------------ | ------------------------------------ |
+| Staging  | https://web-staging-50d4.up.railway.app                                                    | segue a `main` (deploy a cada merge) |
+| Produção | https://imposto.trustcorp.com.br (Railway: https://web-production-399be236.up.railway.app) | **fixada num commit** (ver abaixo)   |
 
 Cada PR também ganha um ambiente temporário.
 
@@ -56,7 +56,7 @@ A produção não segue a `main` sozinha: os serviços `web` e `worker` ficam fi
 
 ### Domínio
 
-`imposto.trustcorp.com.br` aponta para o `web` de produção por CNAME (`vj8kyttw.up.railway.app`), com o TXT `_railway-verify.imposto` para a verificação de posse. O certificado HTTPS é emitido pelo Railway depois da verificação.
+`imposto.trustcorp.com.br` aponta para o `web` de produção por CNAME (`vj8kyttw.up.railway.app`), com o TXT `_railway-verify.imposto` para a verificação de posse; o serviço também responde pelo domínio público gerado pelo Railway (`web-production-399be236.up.railway.app`, usado como fallback de atualização das tabelas assinadas no app). O certificado HTTPS é emitido pelo Railway depois da verificação.
 
 ## Autenticação (Supabase Auth)
 

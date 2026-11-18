@@ -2,6 +2,11 @@
 
 import { useState, type ReactNode } from 'react';
 import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
+import {
+  classificarPorNcm,
+  criticarNcmNoAnexo,
+  formatarNcm,
+} from '@calculafiscal/regras/classificacao';
 import type { BaseMargem, Regime } from '@calculafiscal/motor-fiscal';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
 import { rotuloReducao, type TratamentoInformado } from '@/lib/calculadora/avisos';
@@ -66,24 +71,49 @@ export function CampoNumero({
   );
 }
 
-/** Tratamento de CBS/IBS do produto (cClassTrib), entre os que estão na tabela de regras. */
+/** Tratamento de CBS/IBS do produto (cClassTrib), com sugestão e crítica pelo NCM informado. */
 export function CampoTratamento({
   iniciais,
   erros,
   tratamentos,
+  ncm,
 }: {
   iniciais: ValoresFormulario;
   erros: Erros;
   tratamentos: readonly TratamentoInformado[];
+  ncm?: string;
 }) {
+  const [selecionado, setSelecionado] = useState(iniciais['cClassTrib'] ?? '000001');
   const erro = erros['cClassTrib'];
+
+  let ncmLimpo: string | null = null;
+  if (ncm && ncm.trim() !== '') {
+    try {
+      ncmLimpo = formatarNcm(ncm);
+    } catch {
+      ncmLimpo = null;
+    }
+  }
+
+  const sugestoesNcm =
+    ncmLimpo !== null
+      ? classificarPorNcm(ncmLimpo).sugestoes.filter(
+          (s) => s.cClassTrib !== '000001' && s.suportadoNaCalculadora,
+        )
+      : [];
+  const critica =
+    ncmLimpo !== null && selecionado !== '000001'
+      ? criticarNcmNoAnexo(ncmLimpo, selecionado)
+      : null;
+
   return (
     <div className="campo campo-largo">
       <label htmlFor="cClassTrib">Tratamento de CBS e IBS (cClassTrib)</label>
       <select
         id="cClassTrib"
         name="cClassTrib"
-        defaultValue={iniciais['cClassTrib'] ?? '000001'}
+        value={selecionado}
+        onChange={(e) => setSelecionado(e.target.value)}
         aria-invalid={erro ? true : undefined}
         aria-describedby="cClassTrib-ajuda"
       >
@@ -95,9 +125,42 @@ export function CampoTratamento({
         ))}
       </select>
       <p id="cClassTrib-ajuda" className="ajuda">
-        Reduções da LC 214 de 2027 em diante, na compra e na venda. Confirme que o NCM consta no
-        anexo do tratamento.
+        Reduções da LC 214 de 2027 em diante, na compra e na venda. Com o NCM preenchido, o anexo
+        oficial da Receita Federal é conferido automaticamente.
       </p>
+      {selecionado === '000001' && sugestoesNcm.length > 0 && (
+        <div className="aviso aviso-pendente" role="status">
+          <p>
+            Sugestão para o NCM {ncmLimpo}:{' '}
+            {sugestoesNcm.map((s, i) => (
+              <span key={s.cClassTrib}>
+                {i > 0 ? ' · ' : ''}
+                <strong>{s.cClassTrib}</strong> ({rotuloReducao(s.reducao)}
+                {s.anexo ? `, Anexo ${s.anexo}` : ''}, {s.artigo}){' '}
+                <button
+                  type="button"
+                  className="secundario"
+                  onClick={() => setSelecionado(s.cClassTrib)}
+                >
+                  Usar {s.cClassTrib}
+                </button>
+              </span>
+            ))}
+          </p>
+        </div>
+      )}
+      {critica &&
+        (critica.situacao === 'NAO_VINCULADO' ||
+          (critica.situacao === 'SEM_ANEXO' && !critica.compativelComCodigo)) && (
+          <p className="aviso aviso-erro" role="alert">
+            {critica.mensagem}
+          </p>
+        )}
+      {critica && critica.situacao === 'VINCULADO' && (
+        <p className="ajuda" role="status">
+          {critica.mensagem}
+        </p>
+      )}
       {erro && <p className="erro-campo">{erro}</p>}
     </div>
   );

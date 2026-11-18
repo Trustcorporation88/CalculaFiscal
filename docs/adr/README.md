@@ -12,8 +12,8 @@ Todas estão com status **PROPOSTA** e aguardam aprovação. Formato: contexto, 
 
 ## ADR-002: Motor fiscal puro com aritmética decimal
 
-**Decisão:** `motor-fiscal` sem I/O, usando `decimal.js` com precisão de 34 dígitos. O arredondamento é explícito e feito por item e por tributo (2 casas, ROUND_HALF_UP, a confirmar contra as Notas Técnicas da NF-e/RTC). A entrada é `{ operacao, dataFatoGerador, cenario, regras }`, e as regras chegam injetadas e já resolvidas para a data. A saída é `{ valores, memoria[] }`, em que cada passo da memória tem o id, a fórmula, as entradas, o resultado e a referência à regra (id, versão, fonte).
-**Consequências:** o mesmo resultado sai em qualquer ambiente, inclusive offline no app. A meta de 100% de cobertura vale para este pacote, com testes de propriedade (fast-check) para os invariantes da seção 12.3.
+**Decisão:** `motor-fiscal` sem I/O, usando `decimal.js` com precisão de 34 dígitos. Tributos atuais e preço usam `arredondarMoeda` (2 casas, `ROUND_HALF_UP`). Para o espelho oficial da Calculadora de Tributos da Receita Federal (`ArredondamentoUtils` de `calculadora-rtc-regime-regular` e `calculadora-rtc-simples-nacional`, ref. LC 214/2025, art. 349, § 14), `arredondarInternoRtc` usa 8 casas com `ROUND_HALF_EVEN` e `arredondarMoedaRtc` formata em 2 casas com `ROUND_HALF_EVEN`. A entrada é `{ operacao, dataFatoGerador, cenario, regras }`, e as regras chegam injetadas e já resolvidas para a data. A saída é `{ valores, memoria[] }`, em que cada passo da memória tem o id, a fórmula, as entradas, o resultado e a referência à regra (id, versão, fonte).
+**Consequências:** o mesmo resultado sai em qualquer ambiente, inclusive offline no app. A meta de 100% de cobertura vale para este pacote, com testes de propriedade (fast-check) para os invariantes da seção 12.3 e para a comparação com o oráculo oficial da seção 12.1.
 
 ## ADR-003: Regras como dados versionados no repositório
 
@@ -57,5 +57,4 @@ Todas estão com status **PROPOSTA** e aguardam aprovação. Formato: contexto, 
 
 ## ADR-010: Oráculo oficial
 
-**Decisão:** um job no worker chama a calculadora da Receita (piloto-cbs.tributos.gov.br) para cada caso de referência e grava a diferença. Uma diferença acima de R$ 0,01 reprova. O CI usa respostas gravadas (fixtures), e a chamada real roda diariamente em staging.
-**Pendência:** confirmar que a API pública existe, os termos de uso e o rate limit.
+**Decisão:** com a abertura dos repositórios oficiais da Receita Federal ([calculadora-rtc-regime-regular](https://github.com/ReceitaFederal/calculadora-rtc-regime-regular), [calculadora-rtc-simples-nacional](https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional) e [calculadora-rtc-gerador-danfse](https://github.com/ReceitaFederal/calculadora-rtc-gerador-danfse)), as fórmulas de `BaseCalculoUnificadaService`, `CalculoCbsIbsService`, `CalculoImpostoSeletivoService` e `SimplesNacionalCalculoService` (`NT 2026.005 v1.00`) foram espelhadas diretamente em `@calculafiscal/motor-fiscal` (`rtc-oficial.ts`), e as tabelas `NCM_APLICAVEL`, `EXCECAO_NCM_APLICAVEL`, `NBS_APLICAVEL`, `ANEXO` e `ATIVIDADE_SIMPLES_NACIONAL` foram incorporadas em `@calculafiscal/regras` (`rfb-rtc-anexos-V0059.json`). A suíte `oraculo-rfb.test.ts` roda a cada PR no CI sem depender de rede externa, reproduz os casos dourados da Receita Federal e exige diferença máxima de R$ 0,01 por item.

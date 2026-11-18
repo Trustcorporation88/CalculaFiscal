@@ -325,6 +325,125 @@ export const RespostaCenariosV1 = z.object({
   cenarios: z.array(z.object({ id: Cenario, descricao: z.string() })),
 });
 
+export const ConsultaClassificacaoV1 = z
+  .object({
+    ncm: z
+      .string()
+      .regex(/^\d{4}\.?\d{2}\.?\d{2}$/, 'NCM com 8 dígitos, ex.: 1006.30.21 ou 10063021')
+      .optional()
+      .describe('Código NCM de 8 dígitos da mercadoria (informe ncm ou nbs, nunca os dois).'),
+    nbs: z
+      .string()
+      .regex(/^\d\.?\d{4}\.?\d{2}\.?\d{2}$/, 'NBS com 9 dígitos, ex.: 1.2201.12.00 ou 122011200')
+      .optional()
+      .describe('Código NBS de 9 dígitos do serviço (informe ncm ou nbs, nunca os dois).'),
+    cClassTrib: z
+      .string()
+      .regex(/^\d{6}$/, 'cClassTrib com 6 dígitos, ex.: 200003')
+      .optional()
+      .describe(
+        'Opcional: valida se o NCM ou a NBS informada consta no anexo oficial desta classificação.',
+      ),
+  })
+  .strict();
+
+const ItemAnexoV1 = z.object({
+  prefixo: z.string(),
+  numero: z.string().nullable(),
+  descricao: z.string().nullable(),
+});
+
+const SugestaoClassificacaoV1 = z.object({
+  cst: z.string(),
+  cClassTrib: z.string(),
+  descricao: z.string(),
+  reducao: z
+    .string()
+    .describe('Fração reduzida: "1" = alíquota zero, "0.6" = 60%, "0" = integral.'),
+  artigo: z.string(),
+  anexo: z.string().nullable(),
+  tpRbsn: z.number().int().describe('Tipo de Receita Bruta do Simples Nacional (NT 2026.005).'),
+  confianca: z.enum(['ALTA', 'MEDIA', 'PADRAO']),
+  motivo: z.string(),
+  itensAnexo: z.array(ItemAnexoV1),
+  suportadoNaCalculadora: z.boolean(),
+  regraId: z.string().nullable(),
+});
+
+const EnquadramentoIsV1 = z.discriminatedUnion('incidencia', [
+  z.object({
+    incidencia: z.literal('NAO_INCIDE'),
+    regraId: z.null(),
+    aliquota2027: z.null(),
+    mensagem: z.string(),
+  }),
+  z.object({
+    incidencia: z.literal('INCIDE_MP_1399'),
+    regraId: z.string(),
+    aliquota2027: z.string(),
+    descricao: z.string(),
+    mensagem: z.string(),
+  }),
+  z.object({
+    incidencia: z.literal('PREVISTO_LC_214'),
+    regraId: z.null(),
+    aliquota2027: z.null(),
+    prefixo: z.string(),
+    mensagem: z.string(),
+  }),
+]);
+
+const CriticaAnexoV1 = z.discriminatedUnion('situacao', [
+  z.object({
+    situacao: z.literal('VINCULADO'),
+    cClassTrib: z.string(),
+    anexo: z.string(),
+    artigo: z.string(),
+    itens: z.array(ItemAnexoV1),
+    mensagem: z.string(),
+  }),
+  z.object({
+    situacao: z.literal('NAO_VINCULADO'),
+    cClassTrib: z.string(),
+    anexo: z.string(),
+    artigo: z.string(),
+    excecaoAplicada: z.string().nullable(),
+    mensagem: z.string(),
+  }),
+  z.object({
+    situacao: z.literal('SEM_ANEXO'),
+    cClassTrib: z.string(),
+    artigo: z.string().nullable(),
+    criterio: z.enum([
+      'TRIBUTACAO_INTEGRAL',
+      'REGISTRO_ANVISA',
+      'SAUDE_MENSTRUAL_NCM_9619',
+      'PRODUTO_IN_NATURA',
+      'NAO_CATALOGADO',
+    ]),
+    compativelComCodigo: z.boolean(),
+    mensagem: z.string(),
+  }),
+]);
+
+export const RespostaClassificacaoV1 = z.object({
+  request_id: z.string(),
+  versao_motor: z.string(),
+  versao_regras: z.string(),
+  tipo: z.enum(['NCM', 'NBS']),
+  codigo: z.string(),
+  sugestoes: z.array(SugestaoClassificacaoV1),
+  impostoSeletivo: EnquadramentoIsV1.nullable(),
+  validacao: CriticaAnexoV1.nullable(),
+  fonte: z.object({
+    organizacao: z.string(),
+    versaoBaseDados: z.string(),
+    dataBaseDados: z.string(),
+    notaTecnicaSimples: z.string(),
+    repositorios: z.array(z.string()),
+  }),
+});
+
 // ---------------------------------------------------------------- exemplos
 
 /** Caso Coca-Cola (premissas ESTIMATIVA): distribuidora no Simples, DAS 8%. */

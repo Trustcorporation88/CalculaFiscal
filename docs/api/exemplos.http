@@ -1,5 +1,6 @@
 ### Exemplos da API /v1 (VS Code REST Client ou JetBrains HTTP Client)
 # Defina o token no ambiente local do editor; não o grave neste arquivo.
+# Produção: https://imposto.trustcorp.com.br (Railway: https://web-production-399be236.up.railway.app)
 @base = https://web-staging-50d4.up.railway.app
 @token = {{$dotenv CALCULAFISCAL_TOKEN}}
 
@@ -16,6 +17,18 @@ Authorization: Bearer {{token}}
 
 ### Regras que alcançam a Coca-Cola em março de 2027
 GET {{base}}/v1/regras?data=2027-03-01&ncm=2202.10.00
+Authorization: Bearer {{token}}
+
+### Sugestão e crítica de CST e cClassTrib pelo NCM (arroz na cesta básica)
+GET {{base}}/v1/classificacao?ncm=1006.30.21&cClassTrib=200003
+Authorization: Bearer {{token}}
+
+### Crítica de NCM incompatível com o anexo informado (REG-011)
+GET {{base}}/v1/classificacao?ncm=2202.10.00&cClassTrib=200003
+Authorization: Bearer {{token}}
+
+### Sugestão de classificação por NBS (serviço de educação, Anexo II)
+GET {{base}}/v1/classificacao?nbs=1.2201.12.00
 Authorization: Bearer {{token}}
 
 ### Caso Coca-Cola: distribuidora no Simples (DAS 8%), premissas estimadas

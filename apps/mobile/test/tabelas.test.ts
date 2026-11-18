@@ -6,6 +6,7 @@ import {
   estadoInicial,
   procurarAtualizacao,
   SITE,
+  SITE_RAILWAY_PRODUCAO,
   tabelaEmbutida,
 } from '../src/tabelas';
 
@@ -76,9 +77,16 @@ describe('tabelas do app', () => {
     expect(await procurarAtualizacao(futura, s2.buscar, AGORA)).toMatchObject({ tipo: 'recusada' });
   });
 
-  it('sem internet continua com a tabela que tem', async () => {
+  it('sem internet continua com a tabela que tem, mas usa o Railway de produção se o domínio principal falhar', async () => {
     const s = site({});
     expect(await procurarAtualizacao(antiga, s.buscar, AGORA)).toEqual({ tipo: 'sem-conexao' });
+
+    const fallback = site({
+      [`${SITE_RAILWAY_PRODUCAO}/v1/regras/versao`]: { versao: PACOTE_ASSINADO.versao },
+      [`${SITE_RAILWAY_PRODUCAO}/v1/regras/pacote`]: PACOTE_ASSINADO,
+    });
+    const r = await procurarAtualizacao(antiga, fallback.buscar, AGORA);
+    expect(r.tipo).toBe('atualizada');
   });
 
   it('conta os dias sem conferir para o aviso de 30 dias', () => {

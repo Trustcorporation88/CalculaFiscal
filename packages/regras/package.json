@@ -22,6 +22,10 @@
       "types": "./dist/resolver.d.ts",
       "default": "./dist/resolver.js"
     },
+    "./classificacao": {
+      "types": "./dist/classificacao.d.ts",
+      "default": "./dist/classificacao.js"
+    },
     "./assinatura": {
       "types": "./dist/assinatura.d.ts",
       "default": "./dist/assinatura.js"

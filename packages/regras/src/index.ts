@@ -8,6 +8,7 @@ import { montarRegras } from './tabela.js';
 export * from './schema.js';
 export { vigentesEm } from './vigencia.js';
 export * from './resolver.js';
+export * from './classificacao.js';
 export { montarRegras, tabelaOficial, type TabelaDeRegras } from './tabela.js';
 
 const arquivosYaml = (diretorio: string) =>

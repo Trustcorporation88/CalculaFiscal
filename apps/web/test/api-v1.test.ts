@@ -2,16 +2,25 @@ import { tabelaOficial } from '@calculafiscal/regras';
 import { describe, expect, it, vi } from 'vitest';
 import { autenticar, hashToken, type ConsultaToken } from '../src/lib/api/autenticacao';
 import {
+  ConsultaClassificacaoV1,
   ConsultaRegrasV1,
   EXEMPLO_SIMULACAO,
   RespostaCenariosV1,
+  RespostaClassificacaoV1,
   RespostaRegrasV1,
   RespostaSimulacaoV1,
   SimulacaoV1,
 } from '../src/lib/api/contrato';
 import { documentoOpenApi } from '../src/lib/api/openapi';
 import { json, lerCorpoJson, rotaV1, TAMANHO_MAXIMO_CORPO } from '../src/lib/api/rota';
-import { consultarRegras, hojeEmBrasilia, listarCenarios, simular } from '../src/lib/api/servicos';
+import {
+  consultarClassificacao,
+  consultarRegras,
+  hojeEmBrasilia,
+  lerConsultaClassificacao,
+  listarCenarios,
+  simular,
+} from '../src/lib/api/servicos';
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
@@ -39,6 +48,7 @@ describe('contrato (OpenAPI 3.1 gerado do Zod)', () => {
     expect(doc.openapi).toBe('3.1.0');
     expect(Object.keys(doc.paths).sort()).toEqual([
       '/v1/cenarios',
+      '/v1/classificacao',
       '/v1/openapi.json',
       '/v1/regras',
       '/v1/regras/pacote',
@@ -266,5 +276,48 @@ describe('regras por data e NCM', () => {
     );
     expect(so200003.regras.map((x) => x.id)).toEqual(['reducao.cclasstrib-200003']);
     expect(hojeEmBrasilia(new Date('2026-11-07T01:00:00Z'))).toBe('2026-11-06');
+  });
+});
+
+describe('classificação oficial por NCM e NBS (/v1/classificacao)', () => {
+  it('sugere CST e cClassTrib por NCM e por NBS e bate com o contrato', () => {
+    const arroz = consultarClassificacao(
+      { ncm: '1006.30.21', cClassTrib: '200003' },
+      tabela,
+      'req-c1',
+    );
+    expect(RespostaClassificacaoV1.safeParse(arroz).success).toBe(true);
+    expect(arroz.sugestoes[0]).toMatchObject({
+      cst: '200',
+      cClassTrib: '200003',
+      reducao: '1',
+      confianca: 'ALTA',
+    });
+    expect(arroz.validacao?.situacao).toBe('VINCULADO');
+
+    const cocaIncompativel = consultarClassificacao(
+      { ncm: '22021000', cClassTrib: '200003' },
+      tabela,
+      'req-c2',
+    );
+    expect(RespostaClassificacaoV1.safeParse(cocaIncompativel).success).toBe(true);
+    expect(cocaIncompativel.impostoSeletivo?.incidencia).toBe('INCIDE_MP_1399');
+    expect(cocaIncompativel.validacao?.situacao).toBe('NAO_VINCULADO');
+
+    const servico = consultarClassificacao({ nbs: '1.2201.12.00' }, tabela, 'req-c3');
+    expect(RespostaClassificacaoV1.safeParse(servico).success).toBe(true);
+    expect(servico.sugestoes[0]?.cClassTrib).toBe('200028');
+
+    expect(ConsultaClassificacaoV1.safeParse({ ncm: '1006' }).success).toBe(false);
+    expect(ConsultaClassificacaoV1.safeParse({ nbs: '123' }).success).toBe(false);
+    expect(lerConsultaClassificacao({})).toMatchObject({
+      ok: false,
+      erros: [{ campo: 'ncm' }],
+    });
+    expect(lerConsultaClassificacao({ ncm: '10063021', nbs: '122011200' })).toMatchObject({
+      ok: false,
+      erros: [{ campo: 'nbs' }],
+    });
+    expect(lerConsultaClassificacao({ ncm: '1006.30.21' })).toMatchObject({ ok: true });
   });
 });

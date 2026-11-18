@@ -1,11 +1,13 @@
 import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
 import { z } from 'zod';
 import {
+  ConsultaClassificacaoV1,
   ConsultaRegrasV1,
   EXEMPLO_SIMULACAO,
   LIMITE_ITENS_SINCRONO,
   Problema,
   RespostaCenariosV1,
+  RespostaClassificacaoV1,
   RespostaRegrasV1,
   RespostaSimulacaoV1,
   SimulacaoV1,
@@ -57,15 +59,18 @@ const cabecalhosLimite = {
 
 /** Documento OpenAPI 3.1 gerado do contrato Zod. É o que GET /v1/openapi.json devolve. */
 export function documentoOpenApi(): Esquema {
-  const parametrosRegras = Object.entries(
-    (esquema(ConsultaRegrasV1, 'input')['properties'] ?? {}) as Record<string, Esquema>,
-  ).map(([nome, schema]) => ({
-    name: nome,
-    in: 'query',
-    required: false,
-    schema,
-    ...(typeof schema['description'] === 'string' ? { description: schema['description'] } : {}),
-  }));
+  const parametrosDe = (schemaConsulta: z.ZodType) =>
+    Object.entries(
+      (esquema(schemaConsulta, 'input')['properties'] ?? {}) as Record<string, Esquema>,
+    ).map(([nome, schema]) => ({
+      name: nome,
+      in: 'query',
+      required: false,
+      schema,
+      ...(typeof schema['description'] === 'string' ? { description: schema['description'] } : {}),
+    }));
+  const parametrosRegras = parametrosDe(ConsultaRegrasV1);
+  const parametrosClassificacao = parametrosDe(ConsultaClassificacaoV1);
 
   return {
     openapi: '3.1.0',
@@ -183,6 +188,23 @@ export function documentoOpenApi(): Esquema {
               content: { 'application/json': { schema: esquema(RespostaCenariosV1) } },
             },
             ...respostasDeErro(ERROS_COMUNS),
+          },
+        },
+      },
+      '/v1/classificacao': {
+        get: {
+          operationId: 'sugerirClassificacao',
+          summary: 'Sugestão e validação oficial de CST e cClassTrib a partir de NCM ou NBS',
+          description:
+            'Escopo: regras:ler. Consulta os anexos da LC 214/2025 e a incidência do Imposto Seletivo na base oficial da Receita Federal. Informe exatamente um entre ncm e nbs; opcionalmente envie cClassTrib para validar o vínculo contra o anexo.',
+          parameters: parametrosClassificacao,
+          responses: {
+            '200': {
+              description: 'Sugestões de CST e cClassTrib, grau de confiança e crítica de anexo.',
+              headers: cabecalhosLimite,
+              content: { 'application/json': { schema: esquema(RespostaClassificacaoV1) } },
+            },
+            ...respostasDeErro(['corpo-invalido', ...ERROS_COMUNS]),
           },
         },
       },

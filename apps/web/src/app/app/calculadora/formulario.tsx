@@ -32,6 +32,7 @@ export function FormularioCalculadora({
 }) {
   const [estado, acao, pendente] = useActionState(calcular, INICIAL);
   const [temSt, setTemSt] = useState(iniciais['temSt'] === 'on');
+  const [ncm, setNcm] = useState(iniciais['ncm'] ?? '');
   const erros = estado.situacao === 'erro' ? estado.campos : {};
   const p = { iniciais, erros };
 
@@ -60,14 +61,18 @@ export function FormularioCalculadora({
           </div>
           <div className="campo">
             <label htmlFor="ncm">
-              NCM <span className="ajuda">opcional, necessário para o Imposto Seletivo</span>
+              NCM{' '}
+              <span className="ajuda">
+                opcional, usado no Imposto Seletivo e na sugestão do cClassTrib
+              </span>
             </label>
             <input
               id="ncm"
               name="ncm"
               inputMode="numeric"
               placeholder="2202.10.00"
-              defaultValue={iniciais['ncm'] ?? ''}
+              value={ncm}
+              onChange={(e) => setNcm(e.target.value)}
               aria-invalid={erros['ncm'] ? true : undefined}
               aria-describedby={erros['ncm'] ? 'ncm-erro' : undefined}
             />
@@ -78,7 +83,7 @@ export function FormularioCalculadora({
             )}
           </div>
           <CampoCenario iniciais={iniciais} />
-          <CampoTratamento iniciais={iniciais} erros={erros} tratamentos={tratamentos} />
+          <CampoTratamento iniciais={iniciais} erros={erros} tratamentos={tratamentos} ncm={ncm} />
         </fieldset>
 
         <fieldset>
@@ -187,7 +192,7 @@ function Resultado({ estado }: { estado: Extract<EstadoCalculadora, { situacao: 
       </p>
 
       {r.ajusteNota && <p className="aviso aviso-pendente">{r.ajusteNota}</p>}
-      <p className="aviso aviso-pendente">{avisoTratamento(r.tratamento)}</p>
+      <p className="aviso aviso-pendente">{avisoTratamento(r.tratamento, e.ncm)}</p>
 
       <h3>Linha do tempo</h3>
       <LinhaDoTempo anos={r.anos} simples={simples} />
