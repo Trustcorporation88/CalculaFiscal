@@ -34,7 +34,14 @@ const porta = Number(process.env['PORT'] ?? 8080);
 const servidor = createServer((req, res) => {
   if (req.url === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', servico: 'worker', versaoMotor: VERSAO_MOTOR }));
+    res.end(
+      JSON.stringify({
+        status: 'ok',
+        servico: 'worker',
+        versaoMotor: VERSAO_MOTOR,
+        ambiente: process.env['APP_ENV'] ?? 'local',
+      }),
+    );
     return;
   }
   res.writeHead(404).end();

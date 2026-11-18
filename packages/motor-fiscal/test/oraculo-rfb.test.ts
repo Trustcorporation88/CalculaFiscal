@@ -386,6 +386,8 @@ describe('Simples Nacional: casos dourados da NT 2026.005 v1.00 (Teste_SimplesNa
 });
 
 describe('critério 12.1: oráculo oficial x motor fiscal (diferença máxima de R$ 0,01 por item)', () => {
+  const ateUmCentavo = (a: string, b: string) => dec(a).minus(dec(b)).abs().lte('0.01');
+
   it('compra e venda da Coca-Cola em 2027 e 2033 batem dentro de R$ 0,01 com o oráculo da RFB', () => {
     for (const ano of [ANO_2027, ANO_2033]) {
       const compra = reconstruirCompra(COCA_FABRICANTE, ano, []);
@@ -406,16 +408,10 @@ describe('critério 12.1: oráculo oficial x motor fiscal (diferença máxima de
         aliquotaIbsMun: metadeIbs,
       });
 
-      expect(
-        Math.abs(Number(baseUnificada.baseRGMoeda) - Number(oraculoCompra.vBCIBSCBS)),
-      ).toBeLessThanOrEqual(0.01);
-      expect(Math.abs(compra.is.toNumber() - Number(oraculoCompra.vIS))).toBeLessThanOrEqual(0.01);
-      expect(Math.abs(compra.cbs.toNumber() - Number(oraculoCompra.vCBS))).toBeLessThanOrEqual(
-        0.01,
-      );
-      expect(Math.abs(compra.ibs.toNumber() - Number(oraculoCompra.vIBS))).toBeLessThanOrEqual(
-        0.01,
-      );
+      expect(ateUmCentavo(baseUnificada.baseRGMoeda, oraculoCompra.vBCIBSCBS)).toBe(true);
+      expect(ateUmCentavo(compra.is.toFixed(2), oraculoCompra.vIS)).toBe(true);
+      expect(ateUmCentavo(compra.cbs.toFixed(2), oraculoCompra.vCBS)).toBe(true);
+      expect(ateUmCentavo(compra.ibs.toFixed(2), oraculoCompra.vIBS)).toBe(true);
 
       const venda = precificarAno(
         { fornecimento: COCA_FABRICANTE, perfil: DISTRIBUIDORA_REAL },
@@ -435,12 +431,8 @@ describe('critério 12.1: oráculo oficial x motor fiscal (diferença máxima de
         aliquotaIbsUf: metadeIbs,
         aliquotaIbsMun: metadeIbs,
       });
-      expect(Math.abs(Number(venda.valores.cbs) - Number(oraculoVenda.vCBS))).toBeLessThanOrEqual(
-        0.01,
-      );
-      expect(Math.abs(Number(venda.valores.ibs) - Number(oraculoVenda.vIBS))).toBeLessThanOrEqual(
-        0.01,
-      );
+      expect(ateUmCentavo(venda.valores.cbs, oraculoVenda.vCBS)).toBe(true);
+      expect(ateUmCentavo(venda.valores.ibs, oraculoVenda.vIBS)).toBe(true);
     }
   });
 
@@ -489,17 +481,13 @@ describe('critério 12.1: oráculo oficial x motor fiscal (diferença máxima de
           aliquotaIbsMun: metadeIbs,
           reducao: p.reducaoCbsIbs ?? '0',
         });
-        expect(
-          Math.abs(compra.cbs.toNumber() - Number(oraculoSobreBaseReal.vCBS)),
-        ).toBeLessThanOrEqual(0.01);
-        expect(
-          Math.abs(compra.ibs.toNumber() - Number(oraculoSobreBaseReal.vIBS)),
-        ).toBeLessThanOrEqual(0.01);
+        expect(ateUmCentavo(compra.cbs.toFixed(2), oraculoSobreBaseReal.vCBS)).toBe(true);
+        expect(ateUmCentavo(compra.ibs.toFixed(2), oraculoSobreBaseReal.vIBS)).toBe(true);
 
         const isOraculo = arredondarMoedaRtc(
           arredondarInternoRtc(dec(f.precoLiquido).times(dec(p.aliquotaIs))),
         );
-        expect(Math.abs(compra.is.toNumber() - isOraculo.toNumber())).toBeLessThanOrEqual(0.01);
+        expect(ateUmCentavo(compra.is.toFixed(2), isOraculo.toFixed(2))).toBe(true);
 
         const perfil: PerfilVenda = {
           ...DISTRIBUIDORA_REAL,
@@ -516,13 +504,10 @@ describe('critério 12.1: oráculo oficial x motor fiscal (diferença máxima de
           aliquotaIbsMun: metadeIbs,
           reducao: p.reducaoCbsIbs ?? '0',
         });
-        expect(Math.abs(Number(venda.valores.cbs) - Number(oraculoVenda.vCBS))).toBeLessThanOrEqual(
-          0.01,
-        );
-        expect(Math.abs(Number(venda.valores.ibs) - Number(oraculoVenda.vIBS))).toBeLessThanOrEqual(
-          0.01,
-        );
+        expect(ateUmCentavo(venda.valores.cbs, oraculoVenda.vCBS)).toBe(true);
+        expect(ateUmCentavo(venda.valores.ibs, oraculoVenda.vIBS)).toBe(true);
       }),
+      { numRuns: 300 },
     );
   });
 });
