@@ -35,20 +35,16 @@ Na produção, o mesmo fluxo com `--project-ref qgwqnxkcyhgmlwuirlnc` e um novo 
 | web     | `pnpm turbo run build --filter=@calculafiscal/web...`    | `pnpm --filter @calculafiscal/web start` (Next lê `PORT`) | `/api/health` |
 | worker  | `pnpm turbo run build --filter=@calculafiscal/worker...` | `pnpm --filter @calculafiscal/worker start`               | `/health`     |
 
-| Ambiente | Endereço                                                                                   | Origem do deploy                     |
-| -------- | ------------------------------------------------------------------------------------------ | ------------------------------------ |
-| Staging  | https://web-staging-50d4.up.railway.app                                                    | segue a `main` (deploy a cada merge) |
-| Produção | https://imposto.trustcorp.com.br (Railway: https://web-production-399be236.up.railway.app) | **fixada num commit** (ver abaixo)   |
+| Ambiente | Endereço                                                                                   | Origem do deploy                              |
+| -------- | ------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Staging  | https://web-staging-50d4.up.railway.app                                                    | segue a `main` (deploy a cada merge)          |
+| Produção | https://imposto.trustcorp.com.br (Railway: https://web-production-399be236.up.railway.app) | segue a `main` (auto deploy após o CI passar) |
 
 Cada PR também ganha um ambiente temporário.
 
-### Promover uma versão para a produção
+### Cuidado com migrations em produção
 
-A produção não segue a `main` sozinha: os serviços `web` e `worker` ficam fixados num commit (hoje `5c33996`, a API /v1). Para promover:
-
-1. Confira a versão no staging.
-2. Fixe os dois serviços no commit novo (Railway: origem do serviço com `commitSha`, preparado no ambiente `production`).
-3. Aplique as mudanças preparadas. Se houver migration nova, aplique-a no Supabase de produção antes.
+Com o auto deploy ligado na `main`, se um PR trouxer uma migration nova em `packages/db/supabase/migrations`, aplique-a no Supabase de produção (`supabase db push --remote --project-ref qgwqnxkcyhgmlwuirlnc`) antes de fazer o merge na `main`.
 
 ### Variáveis do `web` em produção
 
