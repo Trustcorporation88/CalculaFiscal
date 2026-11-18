@@ -1,6 +1,8 @@
 // Gera src/pacote.gerado.ts com o conteúdo dos YAML de dados/, para embutir as regras no
-// bundle (site, API e app) sem ler arquivos em tempo de execução. A validação continua no
-// carregamento (tabelaOficial), com o mesmo schema Zod. Rode antes de build, typecheck e test.
+// bundle (site, API e app) sem ler arquivos em tempo de execução, e src/catalogo.gerado.ts com o
+// catálogo oficial de anexos NCM/NBS, IS e Simples Nacional da Receita Federal (fontes/).
+// O catálogo fica fora de PACOTE para preservar o hash e a assinatura Ed25519 das alíquotas.
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { gravarAtomico, lerDados, RAIZ } from './dados.mjs';
 
@@ -13,4 +15,13 @@ export const PACOTE: {
 } = ${JSON.stringify({ versao, arquivos }, null, 2)};
 `;
 gravarAtomico(join(RAIZ, 'src', 'pacote.gerado.ts'), saida);
-console.log(`regras: pacote ${versao} com ${arquivos.length} arquivos`);
+
+const catalogo = JSON.parse(
+  readFileSync(join(RAIZ, 'fontes', 'rfb-rtc-anexos-V0059.json'), 'utf8'),
+);
+const saidaCatalogo = `// Gerado por scripts/gerar-pacote.mjs a partir de fontes/rfb-rtc-anexos-V0059.json. Não edite.
+export const CATALOGO_RFB = ${JSON.stringify(catalogo, null, 2)} as const;
+`;
+gravarAtomico(join(RAIZ, 'src', 'catalogo.gerado.ts'), saidaCatalogo);
+
+console.log(`regras: pacote ${versao} com ${arquivos.length} arquivos + catálogo RFB`);
