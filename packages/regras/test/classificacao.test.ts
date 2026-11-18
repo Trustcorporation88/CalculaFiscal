@@ -174,21 +174,26 @@ describe('classificação e crítica por NCM e NBS', () => {
     expect(() => criticarNcmNoAnexo('2202.10.00', '200')).toThrow(/6 dígitos/);
   });
 
-  it('classifica serviço por NBS (educação 1.2201.12.00 -> 200028 no Anexo II)', () => {
+  it('classifica serviço por NBS (educação 1.2201.12.00 -> 200028 no Anexo II) e explica profissões regulamentadas (200052)', () => {
     const r = classificarPorNbs('122011200', { cClassTrib: '200028' });
     expect(r.sugestoes[0]).toMatchObject({
       cst: '200',
       cClassTrib: '200028',
       reducao: '0.6',
       anexo: 'II',
-      suportadoNaCalculadora: false,
-      regraId: null,
+      suportadoNaCalculadora: true,
+      regraId: 'reducao.cclasstrib-200028',
     });
     expect(r.validacao?.situacao).toBe('VINCULADO');
     expect(criticarNbsNoAnexo('122011200', '200029').situacao).toBe('NAO_VINCULADO');
+    expect(criticarNbsNoAnexo('1.1302.21.00', '200052')).toMatchObject({
+      situacao: 'SEM_ANEXO',
+      criterio: 'PROFISSAO_REGULAMENTADA',
+    });
 
     const semReducao = classificarPorNbs('1.0101.11.00');
     expect(semReducao.sugestoes[0]?.cClassTrib).toBe('000001');
+    expect(semReducao.sugestoes[0]?.motivo).toMatch(/200052/);
   });
 });
 

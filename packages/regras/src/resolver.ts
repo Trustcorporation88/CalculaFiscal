@@ -1,19 +1,23 @@
 import { D, dec, type ParametrosAno, type ReferenciaRegra } from '@calculafiscal/motor-fiscal';
+import { type Cenario } from './cenarios.js';
+import { regrasServicoOficiais } from './classificacao.js';
 import type { Regra } from './schema.js';
 import { vigentesEm } from './vigencia.js';
 
-import { type Cenario } from './cenarios.js';
-
 export { CENARIOS, DESCRICAO_CENARIOS, type Cenario } from './cenarios.js';
+
+export type NaturezaCalculo = 'MERCADORIA' | 'SERVICO';
 
 export interface PedidoAno {
   readonly ano: number;
   readonly cenario?: Cenario;
+  /** Natureza da operação (padrão: MERCADORIA). Em SERVICO habilita os tratamentos de serviço da LC 214. */
+  readonly natureza?: NaturezaCalculo;
   /** NCM do produto (com ou sem pontos), para Imposto Seletivo. */
   readonly ncm?: string;
   /** Data de referência dentro do ano. Padrão: 1º de julho. */
   readonly data?: string;
-  /** Tratamento de CBS/IBS do produto (cClassTrib). Ausente ou 000001 = tributação integral. */
+  /** Tratamento de CBS/IBS do produto ou serviço (cClassTrib). Ausente ou 000001 = tributação integral. */
   readonly cClassTrib?: string;
 }
 
@@ -47,6 +51,11 @@ export function tratamentosDisponiveis(regras: readonly Regra[]): Tratamento[] {
       descricao: r.descricao.replace(/^\d{6}: /, ''),
       reducao: r.valor.aliquota,
     }));
+}
+
+/** Tratamentos com redução de CBS/IBS disponíveis para serviços (30%, 60% e alíquota zero). */
+export function tratamentosServicoDisponiveis(): Tratamento[] {
+  return tratamentosDisponiveis(regrasServicoOficiais());
 }
 
 const soDigitos = (ncm: string) => ncm.replace(/\D/g, '');
@@ -172,12 +181,13 @@ export function resolverAno(regras: readonly Regra[], pedido: PedidoAno): Parame
   let reducaoCbsIbs = '0';
   const codigo = pedido.cClassTrib;
   if (codigo && codigo !== TRIBUTACAO_INTEGRAL) {
-    if (!regras.some((r) => ehReducao(r, codigo))) {
+    const baseReducoes = pedido.natureza === 'SERVICO' ? regrasServicoOficiais() : regras;
+    if (!baseReducoes.some((r) => ehReducao(r, codigo))) {
       throw new RangeError(`O tratamento ${codigo} ainda não está na tabela de reduções.`);
     }
     // Antes da vigência (2026, ano de teste) a redução não tem efeito: fica a regra do ano.
     const vigente = escolher(
-      vigentes.filter((r) => ehReducao(r, codigo)),
+      vigentesEm(baseReducoes, data).filter((r) => ehReducao(r, codigo)),
       cenario,
       `redução ${codigo}`,
     );

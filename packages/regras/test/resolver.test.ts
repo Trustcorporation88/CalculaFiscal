@@ -13,6 +13,7 @@ import {
   resolverPeriodo,
   tabelaOficial,
   tratamentosDisponiveis,
+  tratamentosServicoDisponiveis,
   versaoDasRegras,
   type Regra,
 } from '../src/index.js';
@@ -207,5 +208,21 @@ describe('reduções por tratamento (cClassTrib)', () => {
     expect(
       tratamentosDisponiveis([nova, ...regras]).find((x) => x.codigo === '200034')?.reducao,
     ).toBe('0.5');
+  });
+
+  it('resolve tratamentos de serviços (30% em 200052 e 60% em 200028) sem misturar com mercadoria', () => {
+    const servicos = tratamentosServicoDisponiveis();
+    expect(servicos.find((x) => x.codigo === '200052')).toMatchObject({ reducao: '0.3' });
+    expect(servicos.find((x) => x.codigo === '200028')).toMatchObject({ reducao: '0.6' });
+    expect(servicos.find((x) => x.codigo === '200016')).toMatchObject({ reducao: '1' });
+
+    const p27 = resolverAno(regras, {
+      ano: 2027,
+      natureza: 'SERVICO',
+      cClassTrib: '200052',
+    });
+    expect(p27.reducaoCbsIbs).toBe('0.3');
+    expect(p27.regras.some((r) => r.id === 'reducao.cclasstrib-200052')).toBe(true);
+    expect(() => resolverAno(regras, { ano: 2027, cClassTrib: '200052' })).toThrow(RangeError);
   });
 });
