@@ -16,6 +16,7 @@ export {
   ORDEM_STATUS,
   type BaseMargem,
   type Fornecimento,
+  type ModoFornecedor,
   type ParametrosAno,
   type PerfilVenda,
   type ReferenciaRegra,
@@ -34,10 +35,18 @@ export {
 } from './preco.js';
 
 /** Versão do motor, devolvida em toda resposta da API para tornar o resultado reproduzível. */
-export const VERSAO_MOTOR = '0.6.0';
+export const VERSAO_MOTOR = '0.7.0';
 export { precoPsicologico } from './psicologico.js';
 export { aliquotasCbsIbs } from './efetivas.js';
 export { precoLiquidoPelaNota, type PrecoLiquidoDaNota } from './nota.js';
+export {
+  avaliarPrecoServico,
+  linhaDoTempoServico,
+  precificarServicoAno,
+  type CustosServico,
+  type EntradaServico,
+  type PerfilVendaServico,
+} from './servico.js';
 export {
   calcularBaseUnificadaNfe,
   calcularItemSimplesNt2026005,

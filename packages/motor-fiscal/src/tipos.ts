@@ -10,6 +10,7 @@ export type Status = (typeof ORDEM_STATUS)[number];
 
 export type Regime = 'SIMPLES_DAS' | 'SIMPLES_REGULAR' | 'PRESUMIDO' | 'REAL';
 export type BaseMargem = 'PRECO_COM_TRIBUTO' | 'RECEITA_LIQUIDA';
+export type ModoFornecedor = 'PRECO_LIQUIDO' | 'PRECO_BRUTO';
 
 export interface ReferenciaRegra {
   readonly id: string;
@@ -40,8 +41,14 @@ export interface ParametrosAno {
 
 /** Como o fornecedor vende ao comprador. Valores por unidade; percentuais em fração ("0.18"). */
 export interface Fornecimento {
-  /** Receita líquida do fornecedor, sem tributos. Premissa: constante ao longo dos anos. */
+  /** Receita líquida do fornecedor em 2026, sem tributos. */
   readonly precoLiquido: string;
+  /**
+   * Como o fornecedor forma o preço de 2027 em diante:
+   * - PRECO_LIQUIDO (padrão): mantém a receita líquida e repassa a extinção de PIS/Cofins e IPI;
+   * - PRECO_BRUTO: não repassa a extinção de PIS/Cofins e IPI, incorporando-os à própria receita.
+   */
+  readonly modoFornecedor?: ModoFornecedor;
   /** ICMS próprio do fornecedor (nominal, antes do fator da transição). */
   readonly aliquotaIcms: string;
   /** IPI pela TIPI de 2026. */
