@@ -3,9 +3,16 @@
 import { startTransition, useActionState, useState, type FormEvent } from 'react';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
 import { AVISO_LOTE } from '@/lib/calculadora/avisos';
-import { linhasDaTabela, lerCsv, type Celula, type LeituraTabela } from '@/lib/calculadora/lote';
+import {
+  LIMITE_LOTE,
+  linhasDaTabela,
+  lerCsv,
+  type Celula,
+  type LeituraTabela,
+} from '@/lib/calculadora/lote';
 import { abasDoLote, abasDoModeloLote } from '@/lib/calculadora/planilha';
-import { CampoCenario, CamposVenda } from '@/components/calculadora/campos';
+import { itensDeMultiplosXmls } from '@/lib/calculadora/xml-nfe';
+import { CampoCenario, CampoModoFornecedor, CamposVenda } from '@/components/calculadora/campos';
 import { BotoesExportar, baixarPlanilha } from '@/components/calculadora/exportar';
 import { reais } from '@/components/calculadora/formato';
 import { SeloStatus } from '@/components/calculadora/selo-status';
@@ -14,30 +21,64 @@ import { calcularLoteAcao, type EstadoLote } from '../actions';
 const INICIAL: EstadoLote = { situacao: 'vazio' };
 const ANOS_NA_TELA = [2026, 2027, 2029, 2033];
 
-async function lerArquivo(arquivo: File): Promise<LeituraTabela> {
-  if (arquivo.size > 5 * 1024 * 1024) return { ok: false, erro: 'Arquivo maior que 5 MB.' };
-  if (arquivo.name.toLowerCase().endsWith('.csv')) {
-    return linhasDaTabela(lerCsv(await arquivo.text()));
+type LeituraEntradaLote =
+  | { readonly ok: true; readonly linhas: ValoresFormulario[]; readonly avisos: readonly string[] }
+  | { readonly ok: false; readonly erro: string };
+
+async function lerArquivosLote(lista: FileList): Promise<LeituraEntradaLote> {
+  const arquivos = Array.from(lista);
+  if (arquivos.length === 0) return { ok: false, erro: 'Nenhum arquivo escolhido.' };
+
+  const todosXml = arquivos.every((f) => f.name.toLowerCase().endsWith('.xml'));
+  if (todosXml) {
+    const lidos: Array<{ nome: string; conteudo: string }> = [];
+    for (const f of arquivos) {
+      if (f.size > 5 * 1024 * 1024) {
+        return { ok: false, erro: `${f.name}: arquivo maior que 5 MB.` };
+      }
+      lidos.push({ nome: f.name, conteudo: await f.text() });
+    }
+    const r = itensDeMultiplosXmls(lidos, LIMITE_LOTE);
+    return r.ok ? { ok: true, linhas: r.linhas, avisos: r.avisosGerais } : r;
   }
-  const { readSheet } = await import('read-excel-file/browser');
-  const tabela = (await readSheet(arquivo)) as unknown as Celula[][];
-  return linhasDaTabela(tabela);
+
+  if (arquivos.length > 1) {
+    return {
+      ok: false,
+      erro: 'Múltiplos arquivos de uma vez são aceitos apenas para XMLs de NF-e (.xml). Para planilha, envie um único .xlsx ou .csv.',
+    };
+  }
+
+  const arquivo = arquivos[0]!;
+  if (arquivo.size > 5 * 1024 * 1024) return { ok: false, erro: 'Arquivo maior que 5 MB.' };
+  let resultado: LeituraTabela;
+  if (arquivo.name.toLowerCase().endsWith('.csv')) {
+    resultado = linhasDaTabela(lerCsv(await arquivo.text()));
+  } else {
+    const { readSheet } = await import('read-excel-file/browser');
+    const tabela = (await readSheet(arquivo)) as unknown as Celula[][];
+    resultado = linhasDaTabela(tabela);
+  }
+  return resultado.ok ? { ok: true, linhas: resultado.linhas, avisos: [] } : resultado;
 }
 
 export function FormularioLote({ iniciais }: { iniciais: ValoresFormulario }) {
   const [estado, acao, pendente] = useActionState(calcularLoteAcao, INICIAL);
-  const [leitura, setLeitura] = useState<LeituraTabela | null>(null);
+  const [leitura, setLeitura] = useState<LeituraEntradaLote | null>(null);
   const [lendo, setLendo] = useState(false);
   const erros = estado.situacao === 'erro' ? estado.campos : {};
 
-  async function escolherArquivo(arquivo: File | undefined) {
+  async function escolherArquivos(lista: FileList | null) {
     setLeitura(null);
-    if (!arquivo) return;
+    if (!lista || lista.length === 0) return;
     setLendo(true);
     try {
-      setLeitura(await lerArquivo(arquivo));
+      setLeitura(await lerArquivosLote(lista));
     } catch {
-      setLeitura({ ok: false, erro: 'Não foi possível ler o arquivo. Use .xlsx ou .csv.' });
+      setLeitura({
+        ok: false,
+        erro: 'Não foi possível ler o arquivo. Use .xlsx, .csv ou .xml de NF-e.',
+      });
     } finally {
       setLendo(false);
     }
@@ -55,15 +96,16 @@ export function FormularioLote({ iniciais }: { iniciais: ValoresFormulario }) {
     <>
       <form onSubmit={enviar} className="calculadora" noValidate>
         <fieldset>
-          <legend>Planilha de produtos</legend>
-          <div className="campo">
-            <label htmlFor="arquivo">Arquivo (.xlsx ou .csv)</label>
+          <legend>Planilha (.xlsx/.csv) ou XMLs de NF-e de compra</legend>
+          <div className="campo campo-largo">
+            <label htmlFor="arquivo">Arquivo(s) (.xlsx, .csv ou múltiplos .xml de NF-e)</label>
             <input
               id="arquivo"
               name="arquivo"
               type="file"
-              accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-              onChange={(e) => void escolherArquivo(e.target.files?.[0])}
+              multiple
+              accept=".xlsx,.csv,.xml,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/xml,text/xml"
+              onChange={(e) => void escolherArquivos(e.target.files)}
               aria-describedby="arquivo-situacao"
             />
             <p id="arquivo-situacao" className="ajuda" role="status">
@@ -72,13 +114,19 @@ export function FormularioLote({ iniciais }: { iniciais: ValoresFormulario }) {
                 : leitura === null
                   ? 'Nenhum arquivo escolhido.'
                   : leitura.ok
-                    ? `${leitura.linhas.length} produto(s) lido(s).`
+                    ? `${leitura.linhas.length} item(ns) pronto(s) para simular.`
                     : ''}
             </p>
             {leitura && !leitura.ok && <p className="erro-campo">{leitura.erro}</p>}
+            {leitura?.ok &&
+              leitura.avisos.slice(0, 5).map((av) => (
+                <p key={av} className="aviso aviso-pendente">
+                  {av}
+                </p>
+              ))}
           </div>
           <div className="campo">
-            <span>Modelo</span>
+            <span>Modelo de planilha</span>
             <button
               type="button"
               className="secundario"
@@ -91,6 +139,7 @@ export function FormularioLote({ iniciais }: { iniciais: ValoresFormulario }) {
             <p className="ajuda">Percentuais em número: 18 para 18%.</p>
           </div>
           <CampoCenario iniciais={iniciais} />
+          <CampoModoFornecedor iniciais={iniciais} />
         </fieldset>
 
         <fieldset>

@@ -1,14 +1,18 @@
 import {
+  classificarPorNbs,
   classificarPorNcm,
+  criticarNbsNoAnexo,
   criticarNcmNoAnexo,
+  formatarNbs,
   formatarNcm,
 } from '@calculafiscal/regras/classificacao';
+import type { NaturezaCalculo } from '@calculafiscal/regras/resolver';
 
-/** Tratamento de CBS/IBS do produto (cClassTrib), como vem da tabela de regras. */
+/** Tratamento de CBS/IBS do produto ou serviço (cClassTrib). */
 export interface TratamentoInformado {
   readonly codigo: string;
   readonly descricao: string;
-  /** Fração reduzida: '1' = alíquota zero, '0.6' = redução de 60%. */
+  /** Fração reduzida: '1' = alíquota zero, '0.6' = redução de 60%, '0.3' = redução de 30%. */
   readonly reducao: string;
 }
 
@@ -26,12 +30,52 @@ function ncmNormalizado(ncm?: string | null): string | null {
   }
 }
 
+function nbsNormalizada(nbs?: string | null): string | null {
+  if (!nbs) return null;
+  try {
+    return formatarNbs(nbs);
+  } catch {
+    return null;
+  }
+}
+
 /**
- * O que a tela e as planilhas dizem sobre o tratamento do produto, conferindo o NCM informado
+ * O que a tela e as planilhas dizem sobre o tratamento do produto ou serviço, conferindo NCM/NBS
  * contra os anexos oficiais da Receita Federal (LC 214/2025).
  */
-export function avisoTratamento(t: TratamentoInformado | null, ncm?: string | null): string {
-  const ncmOk = ncmNormalizado(ncm);
+export function avisoTratamento(
+  t: TratamentoInformado | null,
+  ncmOuNbs?: string | null,
+  natureza: NaturezaCalculo = 'MERCADORIA',
+): string {
+  if (natureza === 'SERVICO') {
+    const nbsOk = nbsNormalizada(ncmOuNbs);
+    if (!t) {
+      if (!nbsOk) {
+        return 'Tributação integral de CBS e IBS no serviço. Se houver redução (como 30% nas profissões intelectuais regulamentadas no código 200052 ou 60% em educação e saúde nos códigos 200028 e 200029), selecione o tratamento ou informe a NBS.';
+      }
+      const sugeridas = classificarPorNbs(nbsOk).sugestoes.filter((s) => s.cClassTrib !== '000001');
+      if (sugeridas.length > 0) {
+        const resumo = sugeridas
+          .map(
+            (s) =>
+              `${s.cClassTrib} (${rotuloReducao(s.reducao)}${s.anexo ? `, Anexo ${s.anexo}` : ''}, ${s.artigo})`,
+          )
+          .join('; ');
+        return `Tributação integral de CBS e IBS aplicada ao serviço. Atenção: a NBS ${nbsOk} consta na base da Receita Federal com tratamento diferenciado: ${resumo}.`;
+      }
+      return `Tributação integral de CBS e IBS no serviço. A NBS ${nbsOk} não consta nos anexos de educação ou saúde (profissões regulamentadas com redução de 30% usam o código 200052, sem anexo de NBS).`;
+    }
+    const baseServico = `Tratamento ${t.codigo} aplicado de 2027 em diante na prestação do serviço: ${rotuloReducao(t.reducao)} de CBS e IBS (${t.descricao}). Os insumos tributados da entrada continuam gerando crédito pela alíquota geral.`;
+    if (!nbsOk) return baseServico;
+    const critica = criticarNbsNoAnexo(nbsOk, t.codigo);
+    if (critica.situacao === 'VINCULADO')
+      return `${baseServico} Conferência oficial: ${critica.mensagem}`;
+    if (critica.situacao === 'NAO_VINCULADO') return `${baseServico} Atenção: ${critica.mensagem}`;
+    return `${baseServico} ${critica.mensagem}`;
+  }
+
+  const ncmOk = ncmNormalizado(ncmOuNbs);
 
   if (!t) {
     if (!ncmOk) {
@@ -76,4 +120,4 @@ export function avisoTratamento(t: TratamentoInformado | null, ncm?: string | nu
 }
 
 export const AVISO_LOTE =
-  'Cada produto usa o tratamento da coluna cClassTrib (vazio = tributação integral) de 2027 em diante, na compra e na venda. Para consultar ou conferir os anexos oficiais por NCM, use a calculadora unitária ou GET /v1/classificacao.';
+  'Cada item usa o tratamento da coluna cClassTrib (ou a tag IBSCBS do XML, quando presente; vazio = tributação integral) de 2027 em diante. Para consultar ou conferir os anexos oficiais por NCM/NBS, use a calculadora unitária ou GET /v1/classificacao.';

@@ -38,7 +38,16 @@ const Status = z.enum([
   'ESTIMATIVA',
 ]);
 const BaseMargem = z.enum(['PRECO_COM_TRIBUTO', 'RECEITA_LIQUIDA']);
+const ModoFornecedor = z.enum(['PRECO_LIQUIDO', 'PRECO_BRUTO']);
 const Cenario = z.enum(CENARIOS);
+
+/** Fração de 0 a 1 (inclusive 1): usada na proporção de insumos tributados de serviços. */
+const FracaoAteUm = z
+  .string()
+  .regex(
+    /^(0(\.\d{1,10})?|1(\.0{1,10})?)$/,
+    'fração entre 0 e 1, como texto com ponto: "0.20" para 20% ou "1" para 100%',
+  );
 
 // ---------------------------------------------------------------- requisição
 
@@ -59,33 +68,69 @@ export const CompraV1 = z
       .default(null)
       .describe('Nulo quando a compra não tem ICMS-ST.'),
     freteEDespesas: Decimal.default('0'),
+    modoFornecedor: ModoFornecedor.default('PRECO_LIQUIDO').describe(
+      'PRECO_LIQUIDO repassa a extinção de PIS/Cofins e IPI; PRECO_BRUTO mantém o preço bruto.',
+    ),
   })
   .strict();
 
-export const ItemV1 = z
+export const CustosServicoV1 = z
   .object({
-    idExterno: z
-      .string()
-      .min(1)
-      .max(100)
-      .optional()
-      .describe('Identificador do item no sistema de origem; volta igual na resposta.'),
-    descricao: z.string().max(120).default(''),
+    custoDireto: Decimal.describe('Custo direto total por serviço hoje (2026), em reais.'),
+    parcelaInsumosTributados: FracaoAteUm.default('0').describe(
+      'Fração do custo direto vinda de insumos adquiridos de fornecedores no regime regular.',
+    ),
+    aliquotaPisCofinsInsumos: Fracao.default('0').describe(
+      'PIS e Cofins embutido nos insumos tributados em 2026.',
+    ),
+    modoFornecedor: ModoFornecedor.default('PRECO_LIQUIDO'),
+  })
+  .strict();
+
+const itemComuns = {
+  idExterno: z
+    .string()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe('Identificador do item no sistema de origem; volta igual na resposta.'),
+  descricao: z.string().max(120).default(''),
+  cClassTrib: z
+    .string()
+    .regex(/^\d{6}$/)
+    .default('000001')
+    .describe(
+      'Tratamento de CBS/IBS. 000001 = tributação integral (ex.: 200003 cesta básica; 200052 profissões regulamentadas 30%).',
+    ),
+};
+
+export const ItemMercadoriaV1 = z
+  .object({
+    natureza: z.literal('MERCADORIA').default('MERCADORIA'),
+    ...itemComuns,
     ncm: z
       .string()
       .regex(/^\d{4}\.?\d{2}\.?\d{2}$/)
       .optional()
-      .describe('Necessário para o Imposto Seletivo.'),
-    cClassTrib: z
-      .string()
-      .regex(/^\d{6}$/)
-      .default('000001')
-      .describe(
-        'Tratamento de CBS/IBS. 000001 = tributação integral. Ver GET /v1/regras?tributo=REDUCAO_CBS_IBS.',
-      ),
+      .describe('Necessário para o Imposto Seletivo e conferência de anexo.'),
     compra: CompraV1,
   })
   .strict();
+
+export const ItemServicoV1 = z
+  .object({
+    natureza: z.literal('SERVICO'),
+    ...itemComuns,
+    nbs: z
+      .string()
+      .regex(/^\d\.?\d{4}\.?\d{2}\.?\d{2}$/)
+      .optional()
+      .describe('Código NBS de 9 dígitos do serviço.'),
+    servico: CustosServicoV1,
+  })
+  .strict();
+
+export const ItemV1 = z.union([ItemMercadoriaV1, ItemServicoV1]);
 
 const comuns = {
   despesasVariaveis: Fracao,
@@ -117,6 +162,9 @@ export const VendaV1 = z.discriminatedUnion('regime', [
     .object({
       regime: z.enum(['PRESUMIDO', 'REAL']),
       aliquotaIcmsSaida: Fracao.default('0'),
+      aliquotaIssSaida: Fracao.default('0').describe(
+        'Alíquota nominal do ISS municipal quando o item for serviço (2% a 5%).',
+      ),
       creditaIcmsEntrada: z.boolean().default(false),
       aliquotaPisCofinsSaida: Fracao.default('0'),
       creditoPisCofinsEntrada: Fracao.default('0'),
@@ -159,6 +207,7 @@ const Valores = z.object({
   totalNotaCompra: z.string(),
   isCompra: z.string().describe('Imposto Seletivo embutido no preço do fornecedor (sem crédito).'),
   icms: z.string(),
+  iss: z.string().describe('ISS municipal da prestação de serviço (zero em mercadorias).'),
   pisCofins: z.string(),
   das: z.string(),
   cbs: z.string(),
@@ -224,6 +273,12 @@ export const ResultadoItemV1 = z.object({
   cenarios: z
     .array(z.object({ cenario: Cenario, anos: z.array(ResumoAno) }))
     .describe('Todos os cenários, resumidos.'),
+  comparativoFornecedor: z
+    .object({
+      modoAlternativo: ModoFornecedor,
+      anos: z.array(ResumoAno),
+    })
+    .describe('Resumo da linha do tempo na premissa alternativa do fornecedor (bruto x líquido).'),
   simplificado: z.discriminatedUnion('ok', [
     z.object({
       ok: z.literal(true),

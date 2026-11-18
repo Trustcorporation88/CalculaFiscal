@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { tabelaOficial, tratamentosDisponiveis } from '@calculafiscal/regras';
+import {
+  tabelaOficial,
+  tratamentosDisponiveis,
+  tratamentosServicoDisponiveis,
+} from '@calculafiscal/regras';
 import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
-import { EXEMPLO_COCA, FORMULARIO_VAZIO } from '@/lib/calculadora/exemplos';
+import { EXEMPLO_COCA, EXEMPLO_SERVICO, FORMULARIO_VAZIO } from '@/lib/calculadora/exemplos';
 import { exigirSessao } from '@/lib/sessao';
 import { FormularioCalculadora } from './formulario';
 
@@ -13,7 +17,13 @@ type Props = { searchParams: Promise<Record<string, string | string[] | undefine
 export default async function Calculadora({ searchParams }: Props) {
   await exigirSessao();
   const { exemplo } = await searchParams;
-  const ehExemplo = exemplo === 'coca';
+  const modoExemplo = exemplo === 'coca' ? 'coca' : exemplo === 'servico' ? 'servico' : 'vazio';
+  const iniciais =
+    modoExemplo === 'coca'
+      ? EXEMPLO_COCA
+      : modoExemplo === 'servico'
+        ? EXEMPLO_SERVICO
+        : FORMULARIO_VAZIO;
   const { versao, regras } = tabelaOficial();
 
   return (
@@ -27,29 +37,40 @@ export default async function Calculadora({ searchParams }: Props) {
         </div>
       </header>
       <p>
-        Informe a nota de compra de hoje e como você vende. A calculadora projeta o preço que mantém
-        a sua margem em cada ano da transição, com CBS, IBS, Imposto Seletivo e a redução do ICMS, e
-        mostra a premissa e a fonte de cada número.
+        Simule mercadorias (inclusive importando o XML da NF-e de compra) ou serviços (transição do
+        ISS e reduções da LC 214), comparando o fornecedor que repassa a queda de tributos com o que
+        mantém o preço bruto.
       </p>
       <p className="ajuda">
         Tabela de regras {versao} · motor {VERSAO_MOTOR} ·{' '}
-        {ehExemplo ? (
+        {modoExemplo !== 'vazio' ? (
           <Link href="/app/calculadora">Limpar o formulário</Link>
         ) : (
-          <Link href="/app/calculadora?exemplo=coca">Preencher com o exemplo da Coca-Cola</Link>
+          <>
+            <Link href="/app/calculadora?exemplo=coca">Exemplo Coca-Cola</Link> ·{' '}
+            <Link href="/app/calculadora?exemplo=servico">Exemplo serviço contábil (30%)</Link>
+          </>
         )}{' '}
-        · <Link href="/app/calculadora/lote">Simular vários produtos por planilha</Link>
+        · <Link href="/app/calculadora/lote">Simular lote (planilha ou XMLs de NF-e)</Link>
       </p>
-      {ehExemplo && (
+      {modoExemplo === 'coca' && (
         <p role="status" className="aviso aviso-estimativa">
           Exemplo com premissas estimadas: as alíquotas da nota do fabricante foram calibradas para
-          fechar em R$ 4,89. Troque pelos dados da sua nota.
+          fechar em R$ 4,89. Troque pelos dados da sua nota ou importe o XML.
+        </p>
+      )}
+      {modoExemplo === 'servico' && (
+        <p role="status" className="aviso aviso-estimativa">
+          Exemplo ilustrativo de escritório contábil no Lucro Presumido (ISS 5%, PIS/Cofins 3,65%,
+          20% de insumos tributados e redução de 30% no cClassTrib 200052). Ajuste para a sua
+          realidade.
         </p>
       )}
       <FormularioCalculadora
-        key={ehExemplo ? 'coca' : 'vazio'}
-        iniciais={ehExemplo ? EXEMPLO_COCA : FORMULARIO_VAZIO}
-        tratamentos={tratamentosDisponiveis(regras)}
+        key={modoExemplo}
+        iniciais={iniciais}
+        tratamentosMercadoria={tratamentosDisponiveis(regras)}
+        tratamentosServico={tratamentosServicoDisponiveis()}
       />
     </main>
   );
