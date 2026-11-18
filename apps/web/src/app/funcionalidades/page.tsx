@@ -297,10 +297,18 @@ export default function Funcionalidades() {
                 </ul>
               </div>
             </div>
+            <h3>Serviços: reduções de 30%, 60% e alíquota zero</h3>
+            <ul className={s.marcadores}>
+              {tratamentosServico.map((t) => (
+                <li key={t.codigo}>
+                  <code>{t.codigo}</code> ({rotuloReducao(t.reducao)}): {t.descricao}
+                </li>
+              ))}
+            </ul>
             <p className={s.nota}>
-              Ao informar o NCM de 8 dígitos, a calculadora sugere o tratamento e valida contra os
-              anexos oficiais da Receita Federal (incluindo exceções por subposição). Confira sempre
-              se a descrição comercial do produto atende ao item do anexo.
+              Ao informar o NCM de 8 dígitos ou a NBS de 9 dígitos, a calculadora sugere o
+              tratamento e valida contra os anexos oficiais da Receita Federal (incluindo exceções
+              por subposição). Confira sempre se a descrição comercial atende ao item do anexo.
             </p>
           </Bloco>
 
