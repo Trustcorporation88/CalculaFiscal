@@ -14,6 +14,7 @@ import { tabelaOficial } from '@calculafiscal/regras/tabela';
  */
 
 export const SITE = 'https://imposto.trustcorp.com.br';
+export const SITE_RAILWAY_PRODUCAO = 'https://web-production-399be236.up.railway.app';
 export const DIAS_PARA_AVISO = 30;
 const TEMPO_LIMITE_MS = 15_000;
 const DIA_MS = 86_400_000;
@@ -82,15 +83,11 @@ async function buscarJson(buscar: Buscar, url: string): Promise<unknown> {
   }
 }
 
-/**
- * Pergunta ao site qual é a versão das tabelas e, se for outra, baixa e confere o pacote.
- * Só o pacote é conferido: a resposta de /versao serve apenas para evitar baixar à toa.
- */
-export async function procurarAtualizacao(
+async function procurarEmUmSite(
   atual: TabelaPublicada,
-  buscar: Buscar = fetch as unknown as Buscar,
-  agora: () => Date = () => new Date(),
-  site: string = SITE,
+  buscar: Buscar,
+  agora: () => Date,
+  site: string,
 ): Promise<ResultadoBusca> {
   let versao: unknown;
   try {
@@ -115,6 +112,22 @@ export async function procurarAtualizacao(
     return { tipo: 'recusada', motivo: 'O pacote do site é mais antigo que o do celular.' };
   }
   return { tipo: 'atualizada', verificadoEm, tabela: v.tabela, pacote: pacote as PacoteAssinado };
+}
+
+/**
+ * Pergunta ao site qual é a versão das tabelas e, se for outra, baixa e confere o pacote.
+ * Quando usa o domínio principal da produção e não há resposta, tenta o endereço direto no Railway
+ * (a assinatura Ed25519 continua exigida da mesma forma).
+ */
+export async function procurarAtualizacao(
+  atual: TabelaPublicada,
+  buscar: Buscar = fetch as unknown as Buscar,
+  agora: () => Date = () => new Date(),
+  site: string = SITE,
+): Promise<ResultadoBusca> {
+  const primeiro = await procurarEmUmSite(atual, buscar, agora, site);
+  if (primeiro.tipo !== 'sem-conexao' || site !== SITE) return primeiro;
+  return procurarEmUmSite(atual, buscar, agora, SITE_RAILWAY_PRODUCAO);
 }
 
 /** Dias desde a última conferência (ou, sem nenhuma, desde a publicação da tabela em uso). */

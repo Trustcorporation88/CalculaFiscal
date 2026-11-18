@@ -293,8 +293,9 @@ export default function Funcionalidades() {
               </div>
             </div>
             <p className={s.nota}>
-              Confira se o NCM do produto consta no anexo do tratamento: a sugestão automática pelo
-              NCM ainda não está disponível.
+              Ao informar o NCM de 8 dígitos, a calculadora sugere o tratamento e valida contra os
+              anexos oficiais da Receita Federal (incluindo exceções por subposição). Confira sempre
+              se a descrição comercial do produto atende ao item do anexo.
             </p>
           </Bloco>
 
@@ -355,7 +356,8 @@ export default function Funcionalidades() {
             <ul className={s.marcadores}>
               <li>
                 <strong>Rotas:</strong> simulação de até 20 itens por chamada, regras vigentes numa
-                data e cenários. O contrato está em <a href="/v1/openapi.json">/v1/openapi.json</a>.
+                data, sugestão e crítica de CST/cClassTrib por NCM ou NBS e cenários. O contrato
+                está em <a href="/v1/openapi.json">/v1/openapi.json</a>.
               </li>
               <li>
                 <strong>Tokens:</strong> criados por dono ou administrador da organização, com
@@ -398,17 +400,18 @@ export default function Funcionalidades() {
             resumo="Para você saber exatamente onde o cálculo para."
           >
             <ul className={s.marcadores}>
-              <li>Sugestão do tratamento (cClassTrib) a partir do NCM.</li>
               <li>
                 Simples Nacional no regime regular: depende da partilha do DAS por anexo, ainda não
-                definida pelo CGSN.
+                definida pelo CGSN (na calculadora oficial da Receita Federal, os percentuais
+                efetivos pIBSSN e pCBSSN são informados pelo contribuinte).
               </li>
               <li>
                 Reduções que dependem de quem compra (administração pública, produtor rural, Zona
                 Franca de Manaus).
               </li>
               <li>
-                Serviços (transição do ISS) e regimes específicos, como combustíveis e imóveis.
+                Serviços (transição do ISS, embora a classificação por NBS já possa ser consultada
+                na API) e regimes específicos, como combustíveis e imóveis.
               </li>
               <li>Importação de XML da NF-e e cenário em que o fornecedor mantém o preço bruto.</li>
             </ul>

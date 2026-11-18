@@ -1,6 +1,8 @@
 import { VERSAO_MOTOR } from '@calculafiscal/motor-fiscal';
 import {
   CENARIOS,
+  classificarPorNbs,
+  classificarPorNcm,
   DESCRICAO_CENARIOS,
   vigentesEm,
   type Regra,
@@ -9,7 +11,8 @@ import {
 import { calcularLinhaDoTempo } from '../calculadora/calcular';
 import type { EntradaCalculadora } from '../calculadora/entrada';
 import type { SimulacaoV1 } from './contrato';
-import { corpoProblema } from './problema';
+import { ConsultaClassificacaoV1 } from './contrato';
+import { corpoProblema, errosDoZod } from './problema';
 
 /**
  * Camada de serviço da API: a mesma função de cálculo da tela (calcularLinhaDoTempo), sem
@@ -159,5 +162,68 @@ export function listarCenarios(tabela: TabelaDeRegras, requestId: string) {
     versao_motor: VERSAO_MOTOR,
     versao_regras: tabela.versao,
     cenarios: CENARIOS.map((id) => ({ id, descricao: DESCRICAO_CENARIOS[id] })),
+  };
+}
+
+export function lerConsultaClassificacao(parametros: Record<string, string>) {
+  const consulta = ConsultaClassificacaoV1.safeParse(parametros);
+  if (!consulta.success) {
+    return { ok: false as const, erros: errosDoZod(consulta.error.issues) };
+  }
+  const temNcm = Boolean(consulta.data.ncm);
+  const temNbs = Boolean(consulta.data.nbs);
+  if (temNcm === temNbs) {
+    return {
+      ok: false as const,
+      erros: [
+        {
+          campo: temNcm ? 'nbs' : 'ncm',
+          mensagem: temNcm
+            ? 'Informe apenas ncm ou apenas nbs, nunca os dois na mesma consulta.'
+            : 'Informe ncm (8 dígitos) ou nbs (9 dígitos).',
+        },
+      ],
+    };
+  }
+  return { ok: true as const, dados: consulta.data };
+}
+
+export function consultarClassificacao(
+  q: {
+    ncm?: string | undefined;
+    nbs?: string | undefined;
+    cClassTrib?: string | undefined;
+  },
+  tabela: TabelaDeRegras,
+  requestId: string,
+) {
+  const resultado = q.ncm
+    ? classificarPorNcm(q.ncm, {
+        ...(q.cClassTrib ? { cClassTrib: q.cClassTrib } : {}),
+        regras: tabela.regras,
+      })
+    : classificarPorNbs(q.nbs as string, {
+        ...(q.cClassTrib ? { cClassTrib: q.cClassTrib } : {}),
+      });
+
+  return {
+    request_id: requestId,
+    versao_motor: VERSAO_MOTOR,
+    versao_regras: tabela.versao,
+    tipo: resultado.tipo,
+    codigo: resultado.codigo,
+    sugestoes: resultado.sugestoes.map((s) => ({
+      ...s,
+      itensAnexo: [...s.itensAnexo],
+    })),
+    impostoSeletivo: resultado.impostoSeletivo,
+    validacao:
+      resultado.validacao?.situacao === 'VINCULADO'
+        ? { ...resultado.validacao, itens: [...resultado.validacao.itens] }
+        : resultado.validacao,
+    fonte: {
+      ...resultado.fonte,
+      repositorios: [...resultado.fonte.repositorios],
+    },
   };
 }

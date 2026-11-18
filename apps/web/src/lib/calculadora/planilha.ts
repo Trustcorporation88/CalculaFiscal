@@ -104,7 +104,7 @@ export function abasDoResultado(r: ResultadoCalculadora, geradoEm: Date): Aba[] 
       `O fornecedor mantém o preço líquido de R$ ${r.precoLiquidoFornecedor} (faixa que fecha a mesma nota: ${r.faixaPrecoLiquido.de} a ${r.faixaPrecoLiquido.ate}).`,
     ],
     ...(r.ajusteNota ? [[r.ajusteNota]] : []),
-    [avisoTratamento(r.tratamento)],
+    [avisoTratamento(r.tratamento, r.entrada.ncm)],
     ['Simulação para apoio à decisão; não substitui a análise do contador responsável.'],
   ];
 

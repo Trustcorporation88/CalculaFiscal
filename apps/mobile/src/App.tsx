@@ -359,6 +359,12 @@ function TelaCalculadora(props: {
         dica={DICA_SELETIVO[calculo.ok ? calculo.seletivo : 'sem-ncm']}
       />
 
+      {calculo.ok && calculo.alertaAnexo && (
+        <View style={estilos.aviso}>
+          <Text style={estilos.avisoTexto}>{calculo.alertaAnexo}</Text>
+        </View>
+      )}
+
       {dias > DIAS_PARA_AVISO && (
         <View style={estilos.aviso}>
           <Text style={estilos.avisoTexto}>

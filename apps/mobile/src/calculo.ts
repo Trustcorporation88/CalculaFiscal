@@ -10,6 +10,7 @@ import {
   type PerfilVenda,
   type Status,
 } from '@calculafiscal/motor-fiscal';
+import { classificarPorNcm, criticarNcmNoAnexo } from '@calculafiscal/regras/classificacao';
 import { resolverPeriodo, type Cenario } from '@calculafiscal/regras/resolver';
 import { tabelaOficial, type TabelaDeRegras } from '@calculafiscal/regras/tabela';
 
@@ -96,6 +97,8 @@ export type Calculo =
       readonly anos: readonly ResultadoAnoApp[];
       readonly versao: string;
       readonly seletivo: Seletivo;
+      /** Aviso quando o NCM conflita com o tratamento ou sugere outro nos anexos da LC 214. */
+      readonly alertaAnexo: string | null;
     }
   | { readonly ok: false; readonly erro: string };
 
@@ -156,6 +159,23 @@ function fornecimentoDoAno(custo: string, regime: RegimeApp, p: ParametrosAno): 
       ? precoLiquidoPelaNota(semPreco, custo, { ...p, aliquotaIs: '0' }).precoLiquido
       : custo;
   return { ...semPreco, precoLiquido };
+}
+
+function alertaDeAnexo(ncm: string, tratamento: Tratamento): string | null {
+  if (!ncm) return null;
+  if (tratamento === '000001') {
+    const sugerida = classificarPorNcm(ncm).sugestoes.find(
+      (s) => s.cClassTrib !== '000001' && s.suportadoNaCalculadora,
+    );
+    if (!sugerida) return null;
+    const reducaoTexto =
+      sugerida.reducao === '1'
+        ? 'alíquota zero'
+        : `redução de ${Math.round(Number(sugerida.reducao) * 100)}%`;
+    return `O NCM ${ncm} consta na tabela oficial da Receita Federal com ${reducaoTexto} (código ${sugerida.cClassTrib}${sugerida.anexo ? `, Anexo ${sugerida.anexo}` : ''}). Se o produto atender ao texto legal, ajuste o tratamento em Minha empresa (ou use o site para os demais anexos).`;
+  }
+  const critica = criticarNcmNoAnexo(ncm, tratamento);
+  return critica.situacao === 'NAO_VINCULADO' ? critica.mensagem : null;
 }
 
 export function calcular(
@@ -244,6 +264,7 @@ export function calcular(
       anos,
       versao: `regras ${tabela.versao} · motor ${VERSAO_MOTOR}`,
       seletivo,
+      alertaAnexo: alertaDeAnexo(ncm, config.tratamento),
     };
   } catch (e) {
     return { ok: false, erro: e instanceof RangeError ? e.message : 'Não foi possível calcular.' };

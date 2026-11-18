@@ -102,10 +102,22 @@ describe('cálculo do app (mesmo motor do site)', () => {
     expect(Number(a2027.custo)).toBeGreaterThanOrEqual(4.89);
   });
 
-  it('NCM sem Imposto Seletivo e cenário sem IS não cobram nada', () => {
+  it('NCM sem Imposto Seletivo, cenário sem IS e conferência contra os anexos da LC 214', () => {
     const arroz = calcular(REAL, '22,50', '25', { ncm: '1006.30.21' });
     if (!arroz.ok) throw new Error(arroz.erro);
     expect(arroz.seletivo).toBe('nao-incide');
+    expect(arroz.alertaAnexo).toMatch(/200003.*Anexo I/);
+
+    const arrozCesta = calcular({ ...REAL, tratamento: '200003' }, '22,50', '25', {
+      ncm: '1006.30.21',
+    });
+    expect(arrozCesta.ok && arrozCesta.alertaAnexo).toBeNull();
+
+    const cocaErrada = calcular({ ...REAL, tratamento: '200003' }, '4,89', '25', {
+      ncm: '2202.10.00',
+    });
+    expect(cocaErrada.ok && cocaErrada.alertaAnexo).toMatch(/REG-011/);
+
     const semIs = calcular({ ...REAL, cenario: 'mp-caducada' }, '4,89', '25', {
       ncm: '2202.10.00',
     });
