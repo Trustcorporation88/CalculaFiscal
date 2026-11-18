@@ -123,6 +123,26 @@ describe('importação segura de XML da NF-e', () => {
     expect(calculado[1]?.ok).toBe(true);
   });
 
+  it('decodifica entidades XML uma única vez, inclusive em texto aninhado', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc><NFe><infNFe>
+  <ide><nNF>9</nNF><serie>1</serie></ide>
+  <emit><xNome>A &amp;amp; B &amp; Cia &lt;SP&gt;</xNome></emit>
+  <det nItem="1"><prod>
+    <cProd>1</cProd>
+    <xProd>Produto &quot;A&quot; &apos;B&apos; &amp;lt;literal&gt;</xProd>
+    <NCM>22021000</NCM>
+    <qCom>1.0000</qCom>
+    <vProd>10.00</vProd>
+  </prod><imposto><ICMS><ICMS00><pICMS>18.00</pICMS></ICMS00></ICMS></imposto></det>
+</infNFe></NFe></nfeProc>`;
+    const r = lerXmlNfe(xml);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.emitente).toBe('A &amp; B & Cia <SP>');
+    expect(r.itens[0]?.descricao).toBe('Produto "A" \'B\' &lt;literal>');
+  });
+
   it('recusa XML vazio, com DOCTYPE/ENTITY (XXE) ou sem infNFe', () => {
     expect(lerXmlNfe('')).toMatchObject({ ok: false });
     expect(

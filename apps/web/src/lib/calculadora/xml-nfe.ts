@@ -29,21 +29,39 @@ export type ResultadoLeituraXml =
     }
   | { readonly ok: false; readonly erro: string };
 
-const decodificarEntidadesXml = (s: string) =>
-  s
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+const ENTIDADES_XML: Readonly<Record<string, string>> = {
+  amp: '&',
+  lt: '<',
+  gt: '>',
+  quot: '"',
+  apos: "'",
+};
 
-/** Extrai o conteúdo da primeira ocorrência de uma tag (ignorando eventual prefixo de namespace). */
+/**
+ * Decodifica as cinco entidades predefinidas do XML 1.0 numa única passagem.
+ * `&amp;lt;` vira o texto `&lt;`, nunca `<`: uma segunda passagem reinterpretaria
+ * a entidade que o emissor escreveu de propósito.
+ */
+function decodificarEntidadesXml(s: string): string {
+  return s.replace(
+    /&(amp|lt|gt|quot|apos);/g,
+    (trecho, nome: string) => ENTIDADES_XML[nome] ?? trecho,
+  );
+}
+
+/** Extrai o miolo cru da primeira tag (prefixo de namespace ignorado), sem decodificar entidades. */
 function tag(bloco: string, nome: string): string | null {
   const re = new RegExp(
     `<(?:[A-Za-z0-9_]+:)?${nome}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[A-Za-z0-9_]+:)?${nome}>`,
   );
   const m = re.exec(bloco);
-  return m?.[1] !== undefined ? decodificarEntidadesXml(m[1].trim()) : null;
+  return m?.[1]?.trim() ?? null;
+}
+
+/** Texto de uma tag folha, com entidades decodificadas uma única vez. */
+function texto(bloco: string, nome: string): string | null {
+  const bruto = tag(bloco, nome);
+  return bruto === null ? null : decodificarEntidadesXml(bruto);
 }
 
 function decOuZero(texto: string | null): InstanceType<typeof D> {
@@ -105,10 +123,10 @@ export function lerXmlNfe(xmlTexto: string): ResultadoLeituraXml {
   }
 
   const ide = tag(xmlTexto, 'ide') ?? '';
-  const numeroNota = tag(ide, 'nNF');
-  const serieNota = tag(ide, 'serie');
+  const numeroNota = texto(ide, 'nNF');
+  const serieNota = texto(ide, 'serie');
   const emit = tag(xmlTexto, 'emit') ?? '';
-  const emitente = tag(emit, 'xNome');
+  const emitente = texto(emit, 'xNome');
   const chaveOuNumero = numeroNota ? `NF-e ${numeroNota}${serieNota ? `/${serieNota}` : ''}` : null;
 
   const itens: ItemXmlNfe[] = [];
@@ -119,29 +137,29 @@ export function lerXmlNfe(xmlTexto: string): ResultadoLeituraXml {
     const imposto = tag(det.conteudo, 'imposto') ?? '';
     const observacoes: string[] = [];
 
-    const codigoProduto = tag(prod, 'cProd') ?? '';
-    const descricao = (tag(prod, 'xProd') ?? `Item ${det.nItem}`).slice(0, 120);
-    const ncmDigitos = (tag(prod, 'NCM') ?? '').replace(/\D/g, '');
+    const codigoProduto = texto(prod, 'cProd') ?? '';
+    const descricao = (texto(prod, 'xProd') ?? `Item ${det.nItem}`).slice(0, 120);
+    const ncmDigitos = (texto(prod, 'NCM') ?? '').replace(/\D/g, '');
     const ncm =
       ncmDigitos.length === 8
         ? `${ncmDigitos.slice(0, 4)}.${ncmDigitos.slice(4, 6)}.${ncmDigitos.slice(6, 8)}`
         : '';
 
-    let qCom = decOuZero(tag(prod, 'qCom'));
-    if (qCom.lte(0)) qCom = decOuZero(tag(prod, 'qTrib'));
+    let qCom = decOuZero(texto(prod, 'qCom'));
+    if (qCom.lte(0)) qCom = decOuZero(texto(prod, 'qTrib'));
     if (qCom.lte(0)) qCom = new D(1);
 
-    const vProd = decOuZero(tag(prod, 'vProd'));
-    const vFrete = decOuZero(tag(prod, 'vFrete'));
-    const vSeg = decOuZero(tag(prod, 'vSeg'));
-    const vOutro = decOuZero(tag(prod, 'vOutro'));
-    const vDesc = decOuZero(tag(prod, 'vDesc'));
+    const vProd = decOuZero(texto(prod, 'vProd'));
+    const vFrete = decOuZero(texto(prod, 'vFrete'));
+    const vSeg = decOuZero(texto(prod, 'vSeg'));
+    const vOutro = decOuZero(texto(prod, 'vOutro'));
+    const vDesc = decOuZero(texto(prod, 'vDesc'));
 
     const blocoIcms = tag(imposto, 'ICMS') ?? '';
-    const pICMS = decOuZero(tag(blocoIcms, 'pICMS'));
-    const pMVAST = decOuZero(tag(blocoIcms, 'pMVAST'));
-    const pICMSST = decOuZero(tag(blocoIcms, 'pICMSST'));
-    const vICMSST = decOuZero(tag(blocoIcms, 'vICMSST'));
+    const pICMS = decOuZero(texto(blocoIcms, 'pICMS'));
+    const pMVAST = decOuZero(texto(blocoIcms, 'pMVAST'));
+    const pICMSST = decOuZero(texto(blocoIcms, 'pICMSST'));
+    const vICMSST = decOuZero(texto(blocoIcms, 'vICMSST'));
     const stRetidoAnteriormente = /<(?:[A-Za-z0-9_]+:)?ICMS60\b|<CSOSN>500<\/CSOSN>/.test(
       blocoIcms,
     );
@@ -152,13 +170,13 @@ export function lerXmlNfe(xmlTexto: string): ResultadoLeituraXml {
     }
 
     const blocoIpi = tag(imposto, 'IPI') ?? '';
-    const pIPI = decOuZero(tag(blocoIpi, 'pIPI'));
-    const vIPI = decOuZero(tag(blocoIpi, 'vIPI'));
+    const pIPI = decOuZero(texto(blocoIpi, 'pIPI'));
+    const vIPI = decOuZero(texto(blocoIpi, 'vIPI'));
 
     const blocoPis = tag(imposto, 'PIS') ?? '';
     const blocoCofins = tag(imposto, 'COFINS') ?? '';
-    const pPIS = decOuZero(tag(blocoPis, 'pPIS'));
-    const pCOFINS = decOuZero(tag(blocoCofins, 'pCOFINS'));
+    const pPIS = decOuZero(texto(blocoPis, 'pPIS'));
+    const pCOFINS = decOuZero(texto(blocoCofins, 'pCOFINS'));
     const pPisCofins = pPIS.plus(pCOFINS);
     const pisNaoTributado = /<(?:[A-Za-z0-9_]+:)?PISNT\b/.test(blocoPis);
     if (pisNaoTributado && pPisCofins.isZero()) {
@@ -168,7 +186,7 @@ export function lerXmlNfe(xmlTexto: string): ResultadoLeituraXml {
     }
 
     const blocoIbsCbs = tag(imposto, 'IBSCBS') ?? '';
-    const cClassTribXml = tag(blocoIbsCbs, 'cClassTrib');
+    const cClassTribXml = texto(blocoIbsCbs, 'cClassTrib');
     const cClassTrib = cClassTribXml && /^\d{6}$/.test(cClassTribXml) ? cClassTribXml : '000001';
 
     const freteTotal = D.max(new D(0), vFrete.plus(vSeg).plus(vOutro));
