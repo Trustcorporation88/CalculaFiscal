@@ -29,6 +29,8 @@ export type CriterioSemAnexo =
   | 'REGISTRO_ANVISA'
   | 'SAUDE_MENSTRUAL_NCM_9619'
   | 'PRODUTO_IN_NATURA'
+  | 'PROFISSAO_REGULAMENTADA'
+  | 'REQUISITO_LEGAL_SERVICO'
   | 'NAO_CATALOGADO';
 
 export type CriticaAnexo =
@@ -138,7 +140,19 @@ export interface TipoReceitaBrutaSimples {
   readonly exigeAliquota: boolean;
 }
 
-const CODIGOS_SERVICO_EXCLUSIVO = new Set(['200028', '200029']);
+export const CODIGOS_SERVICO_SUPORTADOS = [
+  '200016',
+  '200028',
+  '200029',
+  '200037',
+  '200038',
+  '200039',
+  '200041',
+  '200042',
+  '200052',
+] as const;
+
+const SET_SERVICO_SUPORTADOS = new Set<string>(CODIGOS_SERVICO_SUPORTADOS);
 /** Classificações cujo enquadramento depende sempre da destinação/uso, mesmo com 1 só anexo. */
 const DEPENDE_DESTINACAO = new Set(['200038', '200039']);
 const NCM_SAUDE_MENSTRUAL = '96190000';
@@ -264,6 +278,32 @@ function criterioSemAnexo(
       compativelComCodigo: true,
       mensagem:
         'Tratamento 200036 (LC 214/2025, art. 137): não usa anexo de NCM na base da Receita Federal; exige que o produto agropecuário, aquícola, pesqueiro, florestal ou extrativista vegetal esteja in natura.',
+    };
+  }
+  if (cClassTrib === '200052') {
+    return {
+      situacao: 'SEM_ANEXO',
+      cClassTrib,
+      artigo: artigo ?? 'Art. 127, I a XVIII',
+      criterio: 'PROFISSAO_REGULAMENTADA',
+      compativelComCodigo: true,
+      mensagem:
+        'Tratamento 200052 (LC 214/2025, art. 127, I a XVIII): redução de 30% para serviços de profissões intelectuais submetidas a conselho profissional (como contabilidade, advocacia, engenharia, arquitetura e administração), cumpridos os requisitos societários do art. 127.',
+    };
+  }
+  if (
+    cClassTrib === '200016' ||
+    cClassTrib === '200037' ||
+    cClassTrib === '200041' ||
+    cClassTrib === '200042'
+  ) {
+    return {
+      situacao: 'SEM_ANEXO',
+      cClassTrib,
+      artigo,
+      criterio: 'REQUISITO_LEGAL_SERVICO',
+      compativelComCodigo: true,
+      mensagem: `Tratamento ${cClassTrib} (LC 214/2025, ${artigo ?? 'serviço diferenciado'}): não usa anexo de NBS na base da Receita Federal; exige atender aos requisitos objetivos do artigo.`,
     };
   }
   return {
@@ -418,7 +458,7 @@ function sugestaoPadraoIntegral(
   const complemento =
     tipo === 'NCM'
       ? ' Reduções sem anexo de NCM (medicamentos registrados na Anvisa nos códigos 200009, 200032 e 200053, ou produtos in natura no 200036) dependem de requisito sanitário ou de estado natural.'
-      : '';
+      : ' Serviços sem anexo de NBS (como profissões intelectuais regulamentadas com redução de 30% no código 200052, art. 127) dependem do enquadramento profissional e societário.';
   return {
     cst: '000',
     cClassTrib: TRIBUTACAO_INTEGRAL,
@@ -477,7 +517,6 @@ export function classificarPorNcm(
   const gerais = encontradas.filter((x) => !DEPENDE_DESTINACAO.has(x.entrada.cClassTrib));
   const multiplasGerais = gerais.length + sugestoes.length > 1;
   for (const { entrada, itens } of encontradas) {
-    const suportado = !CODIGOS_SERVICO_EXCLUSIVO.has(entrada.cClassTrib);
     const exigeDestinacao = DEPENDE_DESTINACAO.has(entrada.cClassTrib);
     const confianca: GrauConfianca = exigeDestinacao || multiplasGerais ? 'MEDIA' : 'ALTA';
     const itemRef = itens[0]?.numero
@@ -499,8 +538,8 @@ export function classificarPorNcm(
       confianca,
       motivo,
       itensAnexo: itens,
-      suportadoNaCalculadora: suportado,
-      regraId: suportado ? `reducao.cclasstrib-${entrada.cClassTrib}` : null,
+      suportadoNaCalculadora: true,
+      regraId: `reducao.cclasstrib-${entrada.cClassTrib}`,
     });
   }
 
@@ -537,7 +576,6 @@ export function classificarPorNbs(
 
   const multiplas = encontradas.length > 1;
   const sugestoes: SugestaoClassificacao[] = encontradas.map(({ entrada, itens }) => {
-    const suportado = !CODIGOS_SERVICO_EXCLUSIVO.has(entrada.cClassTrib);
     const exigeDestinacao = DEPENDE_DESTINACAO.has(entrada.cClassTrib);
     const confianca: GrauConfianca = multiplas || exigeDestinacao ? 'MEDIA' : 'ALTA';
     const itemRef = itens[0]?.numero
@@ -557,8 +595,8 @@ export function classificarPorNbs(
       confianca,
       motivo,
       itensAnexo: itens,
-      suportadoNaCalculadora: suportado,
-      regraId: suportado ? `reducao.cclasstrib-${entrada.cClassTrib}` : null,
+      suportadoNaCalculadora: true,
+      regraId: `reducao.cclasstrib-${entrada.cClassTrib}`,
     };
   });
 
@@ -642,4 +680,35 @@ export function derivarAnexosAtividadeSimples(
   }
 
   return { disponivel, anexosFaltantes, modoFatorR };
+}
+
+const REGRAS_SERVICO: readonly Regra[] = CATALOGO_RFB.classificacoes
+  .filter((c) => SET_SERVICO_SUPORTADOS.has(c.cClassTrib))
+  .map((c): Regra => ({
+    id: `reducao.cclasstrib-${c.cClassTrib}`,
+    versao: 1,
+    tributo: 'REDUCAO_CBS_IBS',
+    descricao: `${c.cClassTrib}: ${c.descricao}`,
+    vigencia: { inicio: '2027-01-01', fim: null },
+    abrangencia: {
+      ncm: [],
+      nbs: [],
+      cClassTrib: [c.cClassTrib],
+      uf: [],
+      regime: [],
+      elo: [],
+    },
+    valor: { aliquota: c.reducao },
+    fonte: {
+      norma: 'LC 214/2025',
+      artigo: `${c.artigo}${c.anexo ? `; Anexo ${c.anexo}` : ''}; base RFB V0059`,
+    },
+    cenarios: [],
+    status: 'PUBLICADO_EFEITO_FUTURO',
+    conferencia: 'OK',
+  }));
+
+/** Regras oficiais de redução de CBS/IBS para serviços (extraídas do catálogo V0059 da RFB). */
+export function regrasServicoOficiais(): readonly Regra[] {
+  return REGRAS_SERVICO;
 }

@@ -123,15 +123,17 @@ describe('validação da simulação', () => {
   });
 
   it('item impossível volta com problema; os outros são calculados', () => {
+    const primeiro = base.itens[0]!;
+    if (primeiro.natureza !== 'MERCADORIA') throw new Error('esperava mercadoria');
     const r = simular(
       {
         ...base,
         itens: [
           ...base.itens,
           {
-            ...base.itens[0]!,
+            ...primeiro,
             idExterno: 'ruim',
-            compra: { ...base.itens[0]!.compra, totalNota: '0.01', freteEDespesas: '5' },
+            compra: { ...primeiro.compra, totalNota: '0.01', freteEDespesas: '5' },
           },
         ],
       },

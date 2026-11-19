@@ -17,15 +17,15 @@ A revogação vale na hora: a próxima requisição com o token já é recusada.
 
 ## Rotas
 
-| Método e caminho        | Escopo     | O que faz                                                                                                                        |
-| ----------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /v1/simulacoes`   | simular    | Simulação síncrona de até 20 itens: linha do tempo de 2026 a 2033, preço psicológico, cenários, comparativo e memória de cálculo |
-| `GET /v1/regras`        | regras:ler | Regras vigentes numa data, com fonte e status. Filtros: `data`, `tributo`, `ncm`, `cClassTrib`                                   |
-| `GET /v1/classificacao` | regras:ler | Sugestão de `CST` e `cClassTrib` por `ncm` ou `nbs`, grau de confiança, enquadramento no IS e crítica contra os anexos da LC 214 |
-| `GET /v1/cenarios`      | regras:ler | Cenários e premissas                                                                                                             |
-| `GET /v1/regras/versao` | sem token  | Versão e metadados do pacote de regras assinado                                                                                  |
-| `GET /v1/regras/pacote` | sem token  | Pacote de regras assinado com Ed25519 (ETag = versão)                                                                            |
-| `GET /v1/openapi.json`  | sem token  | O contrato                                                                                                                       |
+| Método e caminho        | Escopo     | O que faz                                                                                                                                                                                 |
+| ----------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /v1/simulacoes`   | simular    | Simulação síncrona de até 20 itens (mercadorias e serviços, com premissa `PRECO_LIQUIDO` ou `PRECO_BRUTO`): linha do tempo 2026–2033, preço psicológico, cenários, comparativos e memória |
+| `GET /v1/regras`        | regras:ler | Regras vigentes numa data, com fonte e status. Filtros: `data`, `tributo`, `ncm`, `cClassTrib`                                                                                            |
+| `GET /v1/classificacao` | regras:ler | Sugestão de `CST` e `cClassTrib` por `ncm` ou `nbs`, grau de confiança, enquadramento no IS e crítica contra os anexos da LC 214                                                          |
+| `GET /v1/cenarios`      | regras:ler | Cenários e premissas                                                                                                                                                                      |
+| `GET /v1/regras/versao` | sem token  | Versão e metadados do pacote de regras assinado                                                                                                                                           |
+| `GET /v1/regras/pacote` | sem token  | Pacote de regras assinado com Ed25519 (ETag = versão)                                                                                                                                     |
+| `GET /v1/openapi.json`  | sem token  | O contrato                                                                                                                                                                                |
 
 ## Convenções
 

@@ -869,6 +869,17 @@
       "vinculosNbs": []
     },
     {
+      "cClassTrib": "200016",
+      "cst": "200",
+      "descricao": "Prestação de serviços de pesquisa e desenvolvimento por Instituição Científica, Tecnológica e de Inovação (ICT)",
+      "reducao": "1",
+      "artigo": "Art. 156",
+      "anexo": null,
+      "tpRbsn": 9,
+      "vinculosNcm": [],
+      "vinculosNbs": []
+    },
+    {
       "cClassTrib": "200028",
       "cst": "200",
       "descricao": "Fornecimento dos serviços de educação (Anexo II)",
@@ -2904,6 +2915,17 @@
       "vinculosNbs": []
     },
     {
+      "cClassTrib": "200037",
+      "cst": "200",
+      "descricao": "Fornecimento de serviços ambientais de conservação ou recuperação da vegetação nativa",
+      "reducao": "0.6",
+      "artigo": "Art. 137, § 3º",
+      "anexo": null,
+      "tpRbsn": 1,
+      "vinculosNcm": [],
+      "vinculosNbs": []
+    },
+    {
       "cClassTrib": "200038",
       "cst": "200",
       "descricao": "Fornecimento dos insumos agropecuários e aquícolas (Anexo IX)",
@@ -3708,6 +3730,39 @@
           "codigo": "125041100"
         }
       ]
+    },
+    {
+      "cClassTrib": "200041",
+      "cst": "200",
+      "descricao": "Fornecimento de serviço de educação desportiva (art. 141. I)",
+      "reducao": "0.6",
+      "artigo": "Art. 141, I",
+      "anexo": null,
+      "tpRbsn": 1,
+      "vinculosNcm": [],
+      "vinculosNbs": []
+    },
+    {
+      "cClassTrib": "200042",
+      "cst": "200",
+      "descricao": "Fornecimento de serviço de gestão e exploração do desporto (art. 141. II)",
+      "reducao": "0.6",
+      "artigo": "Art. 141, II",
+      "anexo": null,
+      "tpRbsn": 1,
+      "vinculosNcm": [],
+      "vinculosNbs": []
+    },
+    {
+      "cClassTrib": "200052",
+      "cst": "200",
+      "descricao": "Prestação de serviços de profissões intelectuais",
+      "reducao": "0.3",
+      "artigo": "Art. 127, I a XVIII",
+      "anexo": null,
+      "tpRbsn": 1,
+      "vinculosNcm": [],
+      "vinculosNbs": []
     },
     {
       "cClassTrib": "200053",

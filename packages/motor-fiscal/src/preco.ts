@@ -25,6 +25,7 @@ export interface Valores {
   /** Imposto Seletivo embutido no preço do fornecedor: entra no custo e nunca vira crédito. */
   readonly isCompra: string;
   readonly icms: string;
+  readonly iss: string;
   readonly pisCofins: string;
   readonly das: string;
   readonly cbs: string;
@@ -237,6 +238,7 @@ function montarResultado(c: Contexto, preco: Dec, passoPreco: PassoMemoria): Res
       totalNotaCompra: c.compra.totalNota.toFixed(2),
       isCompra: c.compra.is.toFixed(2),
       icms: icms.toFixed(2),
+      iss: '0.00',
       pisCofins: pisCofins.toFixed(2),
       das: valorDas.toFixed(2),
       cbs: cbs.toFixed(2),

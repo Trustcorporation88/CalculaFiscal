@@ -46,15 +46,48 @@ export function reconstruirCompra(
     throw new RangeError('Frete e despesas da compra não podem ser negativos.');
   }
   const fator = dec(p.fatorIcms);
-  const aIcms = dec(f.aliquotaIcms).times(fator);
-  const aPc = p.pisCofinsVigente ? dec(f.aliquotaPisCofins) : ZERO;
-  const aIpi = p.ipiVigente ? dec(f.aliquotaIpi) : ZERO;
+  const aIcmsNominal = dec(f.aliquotaIcms);
+  const aPcNominal = dec(f.aliquotaPisCofins);
+  const aIpiNominal = dec(f.aliquotaIpi);
+  const divisorNominal = new D(1).minus(aIcmsNominal).minus(aPcNominal);
+  if (divisorNominal.lte(0)) {
+    throw new RangeError('ICMS e PIS/Cofins do fornecedor somam 100% ou mais.');
+  }
+
+  const aIcms = aIcmsNominal.times(fator);
+  const aPc = p.pisCofinsVigente ? aPcNominal : ZERO;
+  const aIpi = p.ipiVigente ? aIpiNominal : ZERO;
   const frete = arredondarMoeda(dec(f.freteEDespesas));
 
-  const is = arredondarMoeda(liquido.times(dec(p.aliquotaIs)));
+  const modo = f.modoFornecedor ?? 'PRECO_LIQUIDO';
+  let liquidoAno = liquido;
+  if (modo === 'PRECO_BRUTO' && (!p.pisCofinsVigente || !p.ipiVigente)) {
+    const operacaoBase2026 = liquido.div(divisorNominal);
+    const pcRetido = p.pisCofinsVigente ? ZERO : operacaoBase2026.times(aPcNominal);
+    // O IPI era cobrado por fora do valor da operação: para somar exatamente esse IPI ao novo
+    // valor da operação sem inflá-lo pelo gross-up de ICMS/PIS-Cofins, entra multiplicado pelo divisor do ano.
+    const divisorAno = new D(1).minus(aIcms).minus(aPc);
+    const ipiBruto2026 = p.ipiVigente ? ZERO : operacaoBase2026.times(aIpiNominal);
+    const ipiLiquidoEquivalente = ipiBruto2026.times(divisorAno);
+    liquidoAno = liquido.plus(pcRetido).plus(ipiLiquidoEquivalente);
+    memoria.push({
+      id: 'compra.fornecedor-bruto',
+      descricao: 'Fornecedor mantém o preço bruto (não repassa a extinção de PIS/Cofins e IPI)',
+      formula:
+        'preço líquido de 2026 + PIS/Cofins extinto + IPI extinto ajustado à base por dentro',
+      entradas: {
+        precoLiquido2026: liquido.toString(),
+        pisCofinsRetido: arredondarMoeda(pcRetido).toFixed(2),
+        ipiIncorporadoAoPreco: arredondarMoeda(ipiBruto2026).toFixed(2),
+      },
+      resultado: arredondarMoeda(liquidoAno).toFixed(2),
+      regras: ref(p),
+    });
+  }
+
+  const is = arredondarMoeda(liquidoAno.times(dec(p.aliquotaIs)));
   const divisor = new D(1).minus(aIcms).minus(aPc);
-  if (divisor.lte(0)) throw new RangeError('ICMS e PIS/Cofins do fornecedor somam 100% ou mais.');
-  const precoFornecedor = arredondarMoeda(liquido.plus(is).div(divisor));
+  const precoFornecedor = arredondarMoeda(liquidoAno.plus(is).div(divisor));
   const icmsProprio = arredondarMoeda(precoFornecedor.times(aIcms));
   const pisCofins = arredondarMoeda(precoFornecedor.times(aPc));
   const ipi = arredondarMoeda(precoFornecedor.times(aIpi));
@@ -81,17 +114,20 @@ export function reconstruirCompra(
     {
       id: 'compra.is',
       descricao: 'Imposto Seletivo embutido pelo fornecedor (monofásico, sem crédito)',
-      formula: 'preço líquido do fornecedor × alíquota do IS',
-      entradas: { precoLiquido: liquido.toString(), aliquotaIs: p.aliquotaIs },
+      formula: 'receita líquida do fornecedor no ano × alíquota do IS',
+      entradas: {
+        precoLiquido: liquidoAno.toDecimalPlaces(3, D.ROUND_HALF_UP).toString(),
+        aliquotaIs: p.aliquotaIs,
+      },
       resultado: is.toFixed(2),
       regras: ref(p),
     },
     {
       id: 'compra.preco-fornecedor',
       descricao: 'Valor da operação do fornecedor (ICMS e PIS/Cofins por dentro)',
-      formula: '(preço líquido + IS) ÷ (1 − ICMS × fator − PIS/Cofins)',
+      formula: '(receita líquida do fornecedor + IS) ÷ (1 − ICMS × fator − PIS/Cofins)',
       entradas: {
-        precoLiquido: liquido.toString(),
+        precoLiquido: liquidoAno.toDecimalPlaces(3, D.ROUND_HALF_UP).toString(),
         is: is.toFixed(2),
         aliquotaIcmsEfetiva: aIcms.toString(),
         aliquotaPisCofins: aPc.toString(),

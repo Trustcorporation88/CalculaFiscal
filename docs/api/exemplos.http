@@ -89,3 +89,32 @@ Content-Type: application/json
     }
   ]
 }
+
+### Prestação de serviço contábil (redução de 30%, cClassTrib 200052) no Lucro Presumido
+POST {{base}}/v1/simulacoes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "venda": {
+    "regime": "PRESUMIDO",
+    "aliquotaIssSaida": "0.05",
+    "aliquotaPisCofinsSaida": "0.0365",
+    "despesasVariaveis": "0.08",
+    "margem": "0.25"
+  },
+  "itens": [
+    {
+      "natureza": "SERVICO",
+      "idExterno": "honorario-contabil",
+      "descricao": "Assessoria contábil mensal",
+      "nbs": "1.1302.21.00",
+      "cClassTrib": "200052",
+      "servico": {
+        "custoDireto": "500.00",
+        "parcelaInsumosTributados": "0.20",
+        "aliquotaPisCofinsInsumos": "0.0925"
+      }
+    }
+  ]
+}

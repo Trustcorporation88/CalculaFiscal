@@ -3,14 +3,22 @@
 import { useState, type ReactNode } from 'react';
 import { CENARIOS, DESCRICAO_CENARIOS } from '@calculafiscal/regras/cenarios';
 import {
+  classificarPorNbs,
   classificarPorNcm,
+  criticarNbsNoAnexo,
   criticarNcmNoAnexo,
+  formatarNbs,
   formatarNcm,
 } from '@calculafiscal/regras/classificacao';
-import type { BaseMargem, Regime } from '@calculafiscal/motor-fiscal';
+import type { NaturezaCalculo } from '@calculafiscal/regras/resolver';
+import type { BaseMargem, ModoFornecedor, Regime } from '@calculafiscal/motor-fiscal';
 import type { ValoresFormulario } from '@/lib/calculadora/entrada';
 import { rotuloReducao, type TratamentoInformado } from '@/lib/calculadora/avisos';
-import { ROTULO_BASE_MARGEM, ROTULO_REGIME } from '@/lib/calculadora/rotulos';
+import {
+  ROTULO_BASE_MARGEM,
+  ROTULO_MODO_FORNECEDOR,
+  ROTULO_REGIME,
+} from '@/lib/calculadora/rotulos';
 
 export type Erros = Readonly<Record<string, string>>;
 
@@ -45,9 +53,9 @@ export function CampoNumero({
         {sufixo && <span className="ajuda"> ({sufixo})</span>}
         {!obrigatorio && <span className="ajuda"> opcional</span>}
       </label>
-      {/* key: ao trocar de regime, o React não pode reaproveitar o valor de outro campo. */}
+      {/* key: ao trocar de regime ou importar XML, o React remonta o valor inicial sem misturar campos. */}
       <input
-        key={nome}
+        key={`${nome}:${iniciais[nome] ?? ''}`}
         id={nome}
         name={nome}
         inputMode="decimal"
@@ -71,39 +79,53 @@ export function CampoNumero({
   );
 }
 
-/** Tratamento de CBS/IBS do produto (cClassTrib), com sugestão e crítica pelo NCM informado. */
+/** Tratamento de CBS/IBS do produto ou serviço (cClassTrib), com sugestão e crítica por NCM ou NBS. */
 export function CampoTratamento({
   iniciais,
   erros,
   tratamentos,
   ncm,
+  nbs,
+  natureza = 'MERCADORIA',
 }: {
   iniciais: ValoresFormulario;
   erros: Erros;
   tratamentos: readonly TratamentoInformado[];
   ncm?: string;
+  nbs?: string;
+  natureza?: NaturezaCalculo;
 }) {
   const [selecionado, setSelecionado] = useState(iniciais['cClassTrib'] ?? '000001');
   const erro = erros['cClassTrib'];
+  const ehServico = natureza === 'SERVICO';
 
-  let ncmLimpo: string | null = null;
-  if (ncm && ncm.trim() !== '') {
+  let codigoLimpo: string | null = null;
+  if (ehServico && nbs && nbs.trim() !== '') {
     try {
-      ncmLimpo = formatarNcm(ncm);
+      codigoLimpo = formatarNbs(nbs);
     } catch {
-      ncmLimpo = null;
+      codigoLimpo = null;
+    }
+  } else if (!ehServico && ncm && ncm.trim() !== '') {
+    try {
+      codigoLimpo = formatarNcm(ncm);
+    } catch {
+      codigoLimpo = null;
     }
   }
 
-  const sugestoesNcm =
-    ncmLimpo !== null
-      ? classificarPorNcm(ncmLimpo).sugestoes.filter(
-          (s) => s.cClassTrib !== '000001' && s.suportadoNaCalculadora,
-        )
+  const sugestoes =
+    codigoLimpo !== null
+      ? (ehServico
+          ? classificarPorNbs(codigoLimpo)
+          : classificarPorNcm(codigoLimpo)
+        ).sugestoes.filter((s) => s.cClassTrib !== '000001' && s.suportadoNaCalculadora)
       : [];
   const critica =
-    ncmLimpo !== null && selecionado !== '000001'
-      ? criticarNcmNoAnexo(ncmLimpo, selecionado)
+    codigoLimpo !== null && selecionado !== '000001'
+      ? ehServico
+        ? criticarNbsNoAnexo(codigoLimpo, selecionado)
+        : criticarNcmNoAnexo(codigoLimpo, selecionado)
       : null;
 
   return (
@@ -125,14 +147,15 @@ export function CampoTratamento({
         ))}
       </select>
       <p id="cClassTrib-ajuda" className="ajuda">
-        Reduções da LC 214 de 2027 em diante, na compra e na venda. Com o NCM preenchido, o anexo
-        oficial da Receita Federal é conferido automaticamente.
+        {ehServico
+          ? 'Reduções de serviços da LC 214 (como 30% em profissões regulamentadas no 200052 ou 60% em educação e saúde).'
+          : 'Reduções da LC 214 de 2027 em diante, na compra e na venda. Com o NCM preenchido, o anexo oficial da Receita Federal é conferido automaticamente.'}
       </p>
-      {selecionado === '000001' && sugestoesNcm.length > 0 && (
+      {selecionado === '000001' && sugestoes.length > 0 && (
         <div className="aviso aviso-pendente" role="status">
           <p>
-            Sugestão para o NCM {ncmLimpo}:{' '}
-            {sugestoesNcm.map((s, i) => (
+            Sugestão para {ehServico ? `a NBS ${codigoLimpo}` : `o NCM ${codigoLimpo}`}:{' '}
+            {sugestoes.map((s, i) => (
               <span key={s.cClassTrib}>
                 {i > 0 ? ' · ' : ''}
                 <strong>{s.cClassTrib}</strong> ({rotuloReducao(s.reducao)}
@@ -181,10 +204,44 @@ export function CampoCenario({ iniciais }: { iniciais: ValoresFormulario }) {
   );
 }
 
-/** Como a empresa vende: regime, tributos da saída, despesas e margem. */
-export function CamposVenda({ iniciais, erros }: { iniciais: ValoresFormulario; erros: Erros }) {
+export function CampoModoFornecedor({
+  iniciais,
+  rotulo = 'Como o fornecedor forma o preço de 2027 em diante',
+}: {
+  iniciais: ValoresFormulario;
+  rotulo?: string;
+}) {
+  return (
+    <div className="campo campo-largo">
+      <label htmlFor="modoFornecedor">{rotulo}</label>
+      <select
+        id="modoFornecedor"
+        name="modoFornecedor"
+        defaultValue={iniciais['modoFornecedor'] ?? 'PRECO_LIQUIDO'}
+      >
+        {(Object.keys(ROTULO_MODO_FORNECEDOR) as ModoFornecedor[]).map((m) => (
+          <option key={m} value={m}>
+            {ROTULO_MODO_FORNECEDOR[m]}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Como a empresa vende: regime, tributos da saída (ICMS ou ISS), despesas e margem. */
+export function CamposVenda({
+  iniciais,
+  erros,
+  natureza = 'MERCADORIA',
+}: {
+  iniciais: ValoresFormulario;
+  erros: Erros;
+  natureza?: NaturezaCalculo;
+}) {
   const [regime, setRegime] = useState<Regime>((iniciais['regime'] as Regime) ?? 'SIMPLES_DAS');
   const simples = regime === 'SIMPLES_DAS' || regime === 'SIMPLES_REGULAR';
+  const ehServico = natureza === 'SERVICO';
   const p = { iniciais, erros };
   return (
     <>
@@ -211,7 +268,31 @@ export function CamposVenda({ iniciais, erros }: { iniciais: ValoresFormulario; 
             rotulo="Parte do DAS que é CBS e IBS"
             sufixo="%"
             obrigatorio={false}
-            ajuda="Ainda não definida pelo CGSN. Em branco, o crédito ao cliente aparece como pendente e o Simples no regime regular não é calculado."
+            ajuda="Em branco, o crédito ao cliente aparece como pendente e o Simples no regime regular aguarda definição do CGSN (ou informe a proporção estimada a partir de pCBSSN + pIBSSN)."
+            {...p}
+          />
+        </>
+      ) : ehServico ? (
+        <>
+          <CampoNumero
+            nome="aliquotaIssSaida"
+            rotulo="ISS na saída"
+            sufixo="%"
+            ajuda="Alíquota municipal do ISS (em geral de 2% a 5%). Reduz de 2029 a 2032 e acaba em 2033."
+            {...p}
+          />
+          <CampoNumero
+            nome="aliquotaPisCofinsSaida"
+            rotulo="PIS e Cofins na venda"
+            sufixo="%"
+            ajuda="Em 2026 (ex.: 3,65% no Presumido, 9,25% no Real). Extintos a partir de 2027."
+            {...p}
+          />
+          <CampoNumero
+            nome="creditoPisCofinsEntrada"
+            rotulo="Crédito de PIS e Cofins sobre insumos"
+            sufixo="%"
+            ajuda="Em 2026 sobre a parcela de insumos tributados (zero no Presumido)."
             {...p}
           />
         </>

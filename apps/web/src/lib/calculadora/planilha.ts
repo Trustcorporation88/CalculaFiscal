@@ -5,7 +5,13 @@ import type { LinhaLote, ResultadoCalculadora } from './calcular';
 import { CABECALHO_LOTE, COLUNAS_LOTE } from './lote';
 import { AVISO_LOTE, avisoTratamento } from './avisos';
 import type { EntradaCalculadora } from './entrada';
-import { ROTULO_BASE_MARGEM, ROTULO_CAMPO, ROTULO_REGIME } from './rotulos';
+import {
+  ROTULO_BASE_MARGEM,
+  ROTULO_CAMPO,
+  ROTULO_MODO_FORNECEDOR,
+  ROTULO_NATUREZA,
+  ROTULO_REGIME,
+} from './rotulos';
 
 /**
  * Monta as planilhas de exportação a partir do resultado do servidor, sem recalcular nada:
@@ -40,27 +46,47 @@ const pctTexto = (fracao: string) =>
   `${(Number(fracao) * 100).toLocaleString('pt-BR', { maximumFractionDigits: 4 })}%`;
 const reaisTexto = (v: string) =>
   Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const D_FMT = (v: string) => Number(v).toFixed(2);
 
 /** Os dados informados como pares (rótulo, valor), na ordem do formulário. */
 export function linhasDaEntrada(e: EntradaCalculadora): [string, string][] {
   const r = (campo: string) => ROTULO_CAMPO[campo] ?? campo;
+  const ehServico = e.natureza === 'SERVICO';
   const linhas: [string, string][] = [
+    [r('natureza'), ROTULO_NATUREZA[e.natureza]],
     [r('descricao'), e.descricao || '(sem descrição)'],
-    [r('ncm'), e.ncm ?? '(não informado)'],
+  ];
+  if (ehServico) {
+    linhas.push([r('nbs'), e.nbs ?? '(não informada)']);
+  } else {
+    linhas.push([r('ncm'), e.ncm ?? '(não informado)']);
+  }
+  linhas.push(
     [r('cClassTrib'), e.cClassTrib === '000001' ? '000001 (tributação integral)' : e.cClassTrib],
     [r('cenario'), DESCRICAO_CENARIOS[e.cenario]],
-    [r('notaCompra'), reaisTexto(e.notaCompra)],
-    [r('aliquotaIcms'), pctTexto(e.aliquotaIcms)],
-    [r('aliquotaIpi'), pctTexto(e.aliquotaIpi)],
-    [r('aliquotaPisCofins'), pctTexto(e.aliquotaPisCofins)],
-    [r('freteEDespesas'), reaisTexto(e.freteEDespesas)],
-    [r('temSt'), e.substituicaoTributaria ? 'Sim' : 'Não'],
-  ];
-  if (e.substituicaoTributaria) {
+    [r('modoFornecedor'), ROTULO_MODO_FORNECEDOR[e.modoFornecedor]],
+  );
+  if (ehServico) {
     linhas.push(
-      [r('mva'), pctTexto(e.substituicaoTributaria.mva)],
-      [r('aliquotaInterna'), pctTexto(e.substituicaoTributaria.aliquotaInterna)],
+      [r('custoDireto'), reaisTexto(e.notaCompra)],
+      [r('parcelaInsumosTributados'), pctTexto(e.parcelaInsumosTributados)],
+      [r('aliquotaPisCofinsInsumos'), pctTexto(e.aliquotaPisCofinsInsumos)],
     );
+  } else {
+    linhas.push(
+      [r('notaCompra'), reaisTexto(e.notaCompra)],
+      [r('aliquotaIcms'), pctTexto(e.aliquotaIcms)],
+      [r('aliquotaIpi'), pctTexto(e.aliquotaIpi)],
+      [r('aliquotaPisCofins'), pctTexto(e.aliquotaPisCofins)],
+      [r('freteEDespesas'), reaisTexto(e.freteEDespesas)],
+      [r('temSt'), e.substituicaoTributaria ? 'Sim' : 'Não'],
+    );
+    if (e.substituicaoTributaria) {
+      linhas.push(
+        [r('mva'), pctTexto(e.substituicaoTributaria.mva)],
+        [r('aliquotaInterna'), pctTexto(e.substituicaoTributaria.aliquotaInterna)],
+      );
+    }
   }
   linhas.push([r('regime'), ROTULO_REGIME[e.regime]]);
   if (e.aliquotaDas !== null) {
@@ -70,6 +96,12 @@ export function linhasDaEntrada(e: EntradaCalculadora): [string, string][] {
         r('parcelaCbsIbsNoDas'),
         e.parcelaCbsIbsNoDas === null ? 'pendente (CGSN)' : pctTexto(e.parcelaCbsIbsNoDas),
       ],
+    );
+  } else if (ehServico) {
+    linhas.push(
+      [r('aliquotaIssSaida'), pctTexto(e.aliquotaIssSaida)],
+      [r('aliquotaPisCofinsSaida'), pctTexto(e.aliquotaPisCofinsSaida)],
+      [r('creditoPisCofinsEntrada'), pctTexto(e.creditoPisCofinsEntrada)],
     );
   } else {
     linhas.push(
@@ -88,8 +120,15 @@ export function linhasDaEntrada(e: EntradaCalculadora): [string, string][] {
   return linhas;
 }
 
-/** Todas as abas do resultado de um produto. */
+/** Todas as abas do resultado de um produto ou serviço. */
 export function abasDoResultado(r: ResultadoCalculadora, geradoEm: Date): Aba[] {
+  const ehServico = r.entrada.natureza === 'SERVICO';
+  const codigoNomenclatura = ehServico ? r.entrada.nbs : r.entrada.ncm;
+  const textoPremissa = ehServico
+    ? `Custo direto de 2026: R$ ${D_FMT(r.entrada.notaCompra)} (${ROTULO_MODO_FORNECEDOR[r.entrada.modoFornecedor]} nos insumos).`
+    : r.entrada.modoFornecedor === 'PRECO_BRUTO'
+      ? `O fornecedor mantém o preço bruto de 2026 (não repassa a extinção de PIS/Cofins e IPI; preço líquido base de R$ ${r.precoLiquidoFornecedor}).`
+      : `O fornecedor mantém o preço líquido de R$ ${r.precoLiquidoFornecedor} (faixa que fecha a mesma nota: ${r.faixaPrecoLiquido.de} a ${r.faixaPrecoLiquido.ate}).`;
   const resumo: SheetData = [
     [titulo(r.entrada.descricao || 'Simulação de preço')],
     ['Gerado em', geradoEm.toLocaleString('pt-BR')],
@@ -100,22 +139,20 @@ export function abasDoResultado(r: ResultadoCalculadora, geradoEm: Date): Aba[] 
     ...linhasDaEntrada(r.entrada),
     [],
     [titulo('Premissa')],
-    [
-      `O fornecedor mantém o preço líquido de R$ ${r.precoLiquidoFornecedor} (faixa que fecha a mesma nota: ${r.faixaPrecoLiquido.de} a ${r.faixaPrecoLiquido.ate}).`,
-    ],
+    [textoPremissa],
     ...(r.ajusteNota ? [[r.ajusteNota]] : []),
-    [avisoTratamento(r.tratamento, r.entrada.ncm)],
+    [avisoTratamento(r.tratamento, codigoNomenclatura, r.entrada.natureza)],
     ['Simulação para apoio à decisão; não substitui a análise do contador responsável.'],
   ];
 
   const cabecalhoAnos: Row = [
     'Ano',
     'Status',
-    'Nota de compra',
+    ehServico ? 'Custo bruto' : 'Nota de compra',
     'Custo líquido',
     'Preço de venda',
     'Cliente paga',
-    'ICMS',
+    ehServico ? 'ISS' : 'ICMS',
     'PIS/Cofins',
     'DAS',
     'CBS',
@@ -141,7 +178,7 @@ export function abasDoResultado(r: ResultadoCalculadora, geradoEm: Date): Aba[] 
         moeda(v.custoLiquido),
         moeda(v.preco),
         moeda(v.precoComTributo),
-        moeda(v.icms),
+        moeda(ehServico ? v.iss : v.icms),
         moeda(v.pisCofins),
         moeda(v.das),
         moeda(v.cbs),

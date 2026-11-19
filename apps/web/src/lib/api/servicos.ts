@@ -21,13 +21,13 @@ import { corpoProblema, errosDoZod } from './problema';
 
 function entradaDoItem(req: SimulacaoV1, item: SimulacaoV1['itens'][number]): EntradaCalculadora {
   const v = req.venda;
-  // A união por regime garante os campos de cada caso: DAS no Simples, tributos da saída no regular.
   const saida =
     'aliquotaDas' in v
       ? {
           aliquotaDas: v.aliquotaDas,
           parcelaCbsIbsNoDas: v.parcelaCbsIbsNoDas ?? null,
           aliquotaIcmsSaida: '0',
+          aliquotaIssSaida: '0',
           creditaIcmsEntrada: false,
           aliquotaPisCofinsSaida: '0',
           creditoPisCofinsEntrada: '0',
@@ -36,13 +36,44 @@ function entradaDoItem(req: SimulacaoV1, item: SimulacaoV1['itens'][number]): En
           aliquotaDas: null,
           parcelaCbsIbsNoDas: null,
           aliquotaIcmsSaida: v.aliquotaIcmsSaida,
+          aliquotaIssSaida: v.aliquotaIssSaida,
           creditaIcmsEntrada: v.creditaIcmsEntrada,
           aliquotaPisCofinsSaida: v.aliquotaPisCofinsSaida,
           creditoPisCofinsEntrada: v.creditoPisCofinsEntrada,
         };
+
+  if (item.natureza === 'SERVICO') {
+    return {
+      natureza: 'SERVICO',
+      modoFornecedor: item.servico.modoFornecedor,
+      descricao: item.descricao,
+      ncm: null,
+      nbs: item.nbs ?? null,
+      cClassTrib: item.cClassTrib,
+      cenario: req.cenario,
+      notaCompra: item.servico.custoDireto,
+      aliquotaIcms: '0',
+      aliquotaIpi: '0',
+      aliquotaPisCofins: '0',
+      substituicaoTributaria: null,
+      freteEDespesas: '0',
+      parcelaInsumosTributados: item.servico.parcelaInsumosTributados,
+      aliquotaPisCofinsInsumos: item.servico.aliquotaPisCofinsInsumos,
+      regime: v.regime,
+      ...saida,
+      despesasVariaveis: v.despesasVariaveis,
+      margem: v.margem,
+      baseMargem: v.baseMargem,
+      impostoSimplificado: req.impostoSimplificado,
+    };
+  }
+
   return {
+    natureza: 'MERCADORIA',
+    modoFornecedor: item.compra.modoFornecedor,
     descricao: item.descricao,
     ncm: item.ncm ?? null,
+    nbs: null,
     cClassTrib: item.cClassTrib,
     cenario: req.cenario,
     notaCompra: item.compra.totalNota,
@@ -51,6 +82,8 @@ function entradaDoItem(req: SimulacaoV1, item: SimulacaoV1['itens'][number]): En
     aliquotaPisCofins: item.compra.aliquotaPisCofins,
     substituicaoTributaria: item.compra.substituicaoTributaria,
     freteEDespesas: item.compra.freteEDespesas,
+    parcelaInsumosTributados: '0',
+    aliquotaPisCofinsInsumos: '0',
     regime: v.regime,
     ...saida,
     despesasVariaveis: v.despesasVariaveis,
@@ -83,6 +116,10 @@ export function simular(req: SimulacaoV1, tabela: TabelaDeRegras, requestId: str
             anos: [...r.anos],
             sugestoes: [...r.sugestoes],
             cenarios: r.cenarios.map((c) => ({ cenario: c.cenario, anos: [...c.anos] })),
+            comparativoFornecedor: {
+              modoAlternativo: r.comparativoFornecedor.modoAlternativo,
+              anos: [...r.comparativoFornecedor.anos],
+            },
             simplificado: r.simplificado,
             fontes: [...r.fontes],
           },
